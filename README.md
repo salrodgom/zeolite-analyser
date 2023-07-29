@@ -1,1 +1,1 @@
-# zeolite-analyser
+# zeolite-analyser (old: GeoZeoForCIFFileDatabase).
