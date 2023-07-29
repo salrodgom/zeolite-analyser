@@ -1622,6 +1622,7 @@ program ZeoAnalyser
  call ReadListOfCIFFiles(n_files)
  allocate( CIFFiles(1:n_files) )
  write(6,'(a,1x,i6)')'Detected CIF Files:', n_files
+ write(6,'(a)')'======= Starting Analysis ======='
  call AnalysisCIFFileList(n_files,CIFFiles)
  deallocate(CIFFiles)
  stop "Program finished"
