@@ -33,7 +33,7 @@ back_IZA="Original_Structures"
 make_INPUT
 if [ ! -d SuperCell_P1 ] ; then mkdir SuperCell_P1 ; fi
 if [ ! -d ${back_IZA} ] ; then mkdir ${back_IZA} ; fi
-for file in *.cif ; do
+for file in $1 ; do
  name=$(echo $file | sed "s/\.cif//g")
  abc=$(echo $name | sed 's/_/ /g' | awk '{print $1}')
  sed "s/STRUCTURE/${name}/g"  INPUT > simulation.input

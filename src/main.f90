@@ -659,11 +659,11 @@ end function
   close(u)
   if (opti_flag) then
    if(restart_flag)then
-    command = "export OMP_NUM_THREADS=1; mpirun -np 8 gulp < "//&
+    command = "export OMP_NUM_THREADS=1; gulp < "//&
               ciffiles%filename(1:clen_trim(ciffiles%filename)-4)//'.grs > '//gulpfilenameout(1:clen(gulpfilenameout))
     call system(command)
    else
-    command = "export OMP_NUM_THREADS=1; mpirun -np 8 gulp < "//&
+    command = "export OMP_NUM_THREADS=1; gulp < "//&
               gulpfilename(1:clen(gulpfilename))//" > "//gulpfilenameout(1:clen(gulpfilenameout))
     call system(command)
    end if
@@ -676,7 +676,7 @@ end function
      ! Remove shell particles
      command = "sed -i '/O     shel/d' "//ciffiles%filename(1:clen_trim(ciffiles%filename)-4)//".grs"
      call system(command)
-     command = "export OMP_NUM_THREADS=1; mpirun -np 8 gulp < "//&
+     command = "export OMP_NUM_THREADS=1; gulp < "//&
               ciffiles%filename(1:clen_trim(ciffiles%filename)-4)//'.grs > '//gulpfilenameout(1:clen(gulpfilenameout))
      call system(command)
      if(optimisation_achieved(gulpfilenameout(1:clen(gulpfilenameout)))) then
@@ -1603,6 +1603,9 @@ program ZeoAnalyser
   select case(args(i))
    case ('-nl','--no-create-list')
     generate_list_file = .false.
+    opti_flag = .false.
+    shellonly_flag = .false.
+    restart_flag = .false.
    case ('-r','--restart')
     preoptimization_flag = .true.
    case ('-s','--shellonly')
