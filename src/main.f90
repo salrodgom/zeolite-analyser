@@ -622,8 +622,10 @@ end function
    write(6,'(a)') 'Single-point calculation (optimising shells):' 
    write(u,'(a)') 'opti conv nosymm shellonly'
   else
-   write(6,'(a)') 'Optimising structure:'
-   write(u,'(a)') 'opti conp nosymm'
+   if(opti_flag) then
+    write(6,'(a)') 'Optimising structure:'
+    write(u,'(a)') 'opti conp nosymm'
+   end if
   end if
   write(u,'(a,5x,a)')'name',ciffiles%filename(1:clen_trim(ciffiles%filename)-4)
   write(u,'(a)') 'switch_min rfo gnorm 0.08'//new_line('a')//&
@@ -843,9 +845,11 @@ module GetStructures
     write(6,'(a,1x,a)')"File name:",trim(CIFFiles(i)%filename)
     call ReadCIFFile(CIFFiles(i),"rasp",.false.)
     call output_gulp(CIFFiles(i))
-    call system("cp "//trim(CIFFiles(i)%filename)//" "//trim(CIFFiles(i)%filename)//".back")
-    call system("mv "//adjustl(CIFFiles(i)%filename(1:clen_trim(CIFFiles(i)%filename)-4))//"_opt.cif "//&
-                trim(CIFFiles(i)%filename))
+    if(opti_flag)then
+     call system("cp "//trim(CIFFiles(i)%filename)//" "//trim(CIFFiles(i)%filename)//".back")
+     call system("mv "//adjustl(CIFFiles(i)%filename(1:clen_trim(CIFFiles(i)%filename)-4))//"_opt.cif "//&
+          trim(CIFFiles(i)%filename))
+    end if
     call ReadCIFFile(CIFFiles(i),"rasp",.true.)
     !call output_extended_xyz(CIFFiles(i))
     call TopologicalAnalysis(CIFFiles(i), Descriptor)

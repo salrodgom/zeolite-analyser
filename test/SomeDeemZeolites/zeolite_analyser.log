@@ -3,7 +3,6 @@ Arguments:  1
 Detected CIF Files:     12
 ======= Starting Analysis =======
 File name: ReferenceDataBase/8049967_122.cif
-Optimising structure:
 Atoms:  240 ReferenceDataBase/8049967_122.cif                                                                   
 transformation matrix:
     26.1448002      0.0000000     17.5649643  :      0.0382485      0.0000000     -0.0762147
@@ -48,7 +47,6 @@ Density:       20.3500785828 [A^3/1000T]
 Energy density:      6324.4643554688 [eV/A^3]
 ============================== End ==============================
 File name: ReferenceDataBase/8078629_111.cif
-Optimising structure:
 Atoms:   90 ReferenceDataBase/8078629_111.cif                                                                   
 transformation matrix:
     13.2880001      3.2477038      3.2477038  :      0.0752559     -0.0189685     -0.0155457
@@ -93,7 +91,6 @@ Density:       13.8686695099 [A^3/1000T]
 Energy density:      9280.1513671875 [eV/A^3]
 ============================== End ==============================
 File name: ReferenceDataBase/8133379_111.cif
-Optimising structure:
 Atoms:  144 ReferenceDataBase/8133379_111.cif                                                                   
 transformation matrix:
     15.7966003      0.0000000      7.2264509  :      0.0633048      0.0000000     -0.0445880
@@ -138,7 +135,6 @@ Density:       17.2648715973 [A^3/1000T]
 Energy density:      7454.6372070312 [eV/A^3]
 ============================== End ==============================
 File name: ReferenceDataBase/8194023_111.cif
-Optimising structure:
 Atoms:  156 ReferenceDataBase/8194023_111.cif                                                                   
 transformation matrix:
     13.5465002      0.0000000      0.0000000  :      0.0738198      0.0000000      0.0000000
@@ -183,7 +179,6 @@ Density:       15.4745531082 [A^3/1000T]
 Energy density:      8317.0966796875 [eV/A^3]
 ============================== End ==============================
 File name: ReferenceDataBase/8268600_111.cif
-Optimising structure:
 Atoms:  312 ReferenceDataBase/8268600_111.cif                                                                   
 transformation matrix:
     13.3513002      0.0000000      0.0000000  :      0.0748991      0.0000000      0.0000000
@@ -228,7 +223,6 @@ Density:       16.8621368408 [A^3/1000T]
 Energy density:      7632.6835937500 [eV/A^3]
 ============================== End ==============================
 File name: ReferenceDataBase/8286937_111.cif
-Optimising structure:
 Atoms:  312 ReferenceDataBase/8286937_111.cif                                                                   
 transformation matrix:
     21.9545002      0.0000000      0.0000000  :      0.0455487      0.0000000      0.0000000
@@ -273,7 +267,6 @@ Density:       12.5806064606 [A^3/1000T]
 Energy density:     10230.2978515625 [eV/A^3]
 ============================== End ==============================
 File name: ReferenceDataBase/8312978_111.cif
-Optimising structure:
 Atoms:  336 ReferenceDataBase/8312978_111.cif                                                                   
 transformation matrix:
     20.1900997      0.0000000      0.0000000  :      0.0495292      0.0000000      0.0000000
@@ -318,7 +311,6 @@ Density:       14.3783798218 [A^3/1000T]
 Energy density:      8951.1718750000 [eV/A^3]
 ============================== End ==============================
 File name: ReferenceDataBase/8317769_111.cif
-Optimising structure:
 Atoms:  264 ReferenceDataBase/8317769_111.cif                                                                   
 transformation matrix:
     16.1238995      0.0000000      0.0000000  :      0.0620197      0.0000000      0.0000000
@@ -363,7 +355,6 @@ Density:       16.3699989319 [A^3/1000T]
 Energy density:      7862.1479492188 [eV/A^3]
 ============================== End ==============================
 File name: ReferenceDataBase/8323183_111.cif
-Optimising structure:
 Atoms:  180 ReferenceDataBase/8323183_111.cif                                                                   
 transformation matrix:
     16.3297005     -8.1648512      0.0000000  :      0.0612381      0.0353558      0.0000000
@@ -408,7 +399,6 @@ Density:       13.8799686432 [A^3/1000T]
 Energy density:      9272.5966796875 [eV/A^3]
 ============================== End ==============================
 File name: ReferenceDataBase/8323211_111.cif
-Optimising structure:
 Atoms:  240 ReferenceDataBase/8323211_111.cif                                                                   
 transformation matrix:
     18.1445999     -9.0723009      0.0000000  :      0.0551128      0.0318194      0.0000000
@@ -453,7 +443,6 @@ Density:       13.9245414734 [A^3/1000T]
 Energy density:      9242.9150390625 [eV/A^3]
 ============================== End ==============================
 File name: ReferenceDataBase/8325000_111.cif
-Optimising structure:
 Atoms:  162 ReferenceDataBase/8325000_111.cif                                                                   
 transformation matrix:
     18.9157009     -9.4578514      0.0000000  :      0.0528661      0.0305223      0.0000000
@@ -498,7 +487,6 @@ Density:       15.7067747116 [A^3/1000T]
 Energy density:      8194.1298828125 [eV/A^3]
 ============================== End ==============================
 File name: ReferenceDataBase/8328529_111.cif
-Optimising structure:
 Atoms:  432 ReferenceDataBase/8328529_111.cif                                                                   
 transformation matrix:
     22.5293007    -11.2646513      0.0000000  :      0.0443866      0.0256266      0.0000000
