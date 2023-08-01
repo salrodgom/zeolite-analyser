@@ -221,6 +221,8 @@ module types
   integer           :: N_SiSi
   real              :: Sum_SiSi_d
   real              :: Sum_SiOSi_angle
+  real              :: Sum_SiOSi_dot_SiO_product
+  real              :: Sum_rho
   real              :: charge
   real              :: Q
   real              :: radius
@@ -1022,7 +1024,7 @@ module GetStructures
   real                     :: DistanceMatrix(CIF%n_atoms,CIF%n_atoms)
   logical                  :: ConnectedAtoms(CIF%n_atoms,CIF%n_atoms)
   logical                  :: flag =.false.
-  real                     :: r, r1(1:3), r2(1:3), r3(1:3), r4(1:3), angle, angle_tmp
+  real                     :: r, r1(1:3), r2(1:3), r3(1:3), r4(1:3), angle, angle_tmp, theta, rho, dd, r_rho
   character(len=20)        :: abc
   character(len=100)       :: sio_file_name,  sisisi_file_name,NMR_SiSi_filename
   character(len=100)       :: osio_file_name, siosi_file_name, ooo_file_name
@@ -1290,6 +1292,15 @@ module GetStructures
        angle = angle3vectors_jik(v2,v1,v3)/degtorad
        CIF%atom(j)%Sum_SiOSi_angle=CIF%atom(j)%Sum_SiOSi_angle+angle
        CIF%atom(l)%Sum_SiOSi_angle=CIF%atom(l)%Sum_SiOSi_angle+angle
+! angle SiOSi:
+       CIF%atom(j)%Sum_rho = CIF%atom(j)%Sum_rho + cos(angle/degtorad)/(cos(angle/degtorad)+1)
+       CIF%atom(l)%Sum_rho = CIF%atom(l)%Sum_rho + cos(angle/degtorad)/(cos(angle/degtorad)+1)
+! Sum_SiOSi_dot_SiO_product
+       rho = cos(degtorad*angle)/(cos(degtorad*angle)+1)
+       CIF%atom(j)%Sum_SiOSi_dot_SiO_product=CIF%atom(j)%Sum_SiOSi_dot_SiO_product+&
+              rho * DistanceMatrix(j,k)
+       CIF%atom(l)%Sum_SiOSi_dot_SiO_product=CIF%atom(l)%Sum_SiOSi_dot_SiO_product+&
+              rho * DistanceMatrix(l,k) 
 ! ----  Staggering Angle:
 ! {{ Dihedral angle O-(si)-(Si)-O: i, j, l, m atoms:
 !    First order:
@@ -1355,9 +1366,16 @@ module GetStructures
      end do do_l_search_staggering
     end if
     end do do_k_search_staggering
-    !write(NMR_SiSi_unit,*) j, 143.03-20.34*CIF%atom(j)%Sum_SiSi_d
-    !write(NMR_SiSi_unit,*) j, 247.6-116.7*(CIF%atom(j)%Sum_SiSi_d/4.0)
-    write(NMR_SiSi_unit,*) j, -25.44-0.5793*(CIF%atom(j)%Sum_SiOSi_angle/4.0), 247.6-116.7*(CIF%atom(j)%Sum_SiSi_d/4.0)
+    ! Write NMR estimation from literature:
+    theta  = CIF%atom(j)%Sum_SiOSi_angle/4.0           ! [deg.]
+    rho    = CIF%atom(j)%Sum_rho/4.0 
+    dd     = CIF%atom(j)%Sum_SiSi_d/4.0                ! [A]
+    r_rho = CIF%atom(j)%Sum_SiOSi_dot_SiO_product/4.0
+    write(NMR_SiSi_unit,*) j, &
+     -25.44-0.5793*theta,&  ! Thomas et al., Chem. Phys. Lett., 102, 1983, 158-162, 10.1016/0009-2614(83)87384-9
+     247.6-116.7*dd !,     &  ! Fyfe et al., Nature, 326, 281-283, 1987, 10.1038/326281a0
+    !   2.19-247.05*rho,  &  ! Engelhardt and Radeglia, Chem. Phys. Lett., 108, 1984, 271-274, 10.1016/0009-2614(84)87063-3
+    !  48.54-216.96*r_rho    ! Davis et al., J. Phys. Chem., 100 (1996), 5039-5049, 10.1021/jp9530055
    end if
   end do do_j_search_staggering
   !
