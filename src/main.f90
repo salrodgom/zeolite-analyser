@@ -1079,10 +1079,13 @@ module GetStructures
   if( ios /= 0 ) stop "Error opening file q_filename"
 !
   write(6,'(a)')'Detecting natural bonds [...]'
-  !
+!
   DistanceMatrix = 0.0
   ConnectedAtoms = .false.
   CIF%atom(:)%degree = 0.0
+  CIF%atom(:)%Sum_SiOSi_angle = 0.0; CIF%atom(:)%Sum_rho=0.0
+  CIF%atom(:)%Sum_SiSi_d= 0.0; CIF%atom(:)%Sum_SiOSi_dot_SiO_product=0.0
+!
   do_i_bond: do i = 1, CIF%n_atoms
    do_j_bond: do j = i + 1, CIF%n_atoms
     call make_distances(.false.,vector2array(CIF%atom(j)%uCoordinate), &
@@ -1263,6 +1266,7 @@ module GetStructures
   end do do_i_search_q
 ! 
   visited_staggering(1:CIF%n_atoms,1:CIF%n_atoms) = .false.
+
 !
   do_j_search_staggering: do j = 1, CIF%n_atoms                            ! Si, j
    if(CIF%atom(j)%element == 14) then
@@ -1372,13 +1376,13 @@ module GetStructures
     dd     = CIF%atom(j)%Sum_SiSi_d/4.0                ! [A]
     r_rho = CIF%atom(j)%Sum_SiOSi_dot_SiO_product/4.0
     write(NMR_SiSi_unit,*) j, &
-     -25.44-0.5793*theta,&  ! Thomas et al., Chem. Phys. Lett., 102, 1983, 158-162, 10.1016/0009-2614(83)87384-9
-     247.6-116.7*dd !,     &  ! Fyfe et al., Nature, 326, 281-283, 1987, 10.1038/326281a0
+     -25.44 - 0.5793*theta,&  ! Thomas et al., Chem. Phys. Lett., 102, 1983, 158-162, 10.1016/0009-2614(83)87384-9
+     247.6 - 116.7*dd,     &  ! Fyfe et al., Nature, 326, 281-283, 1987, 10.1038/326281a0
+     theta,rho,dd
     !   2.19-247.05*rho,  &  ! Engelhardt and Radeglia, Chem. Phys. Lett., 108, 1984, 271-274, 10.1016/0009-2614(84)87063-3
     !  48.54-216.96*r_rho    ! Davis et al., J. Phys. Chem., 100 (1996), 5039-5049, 10.1021/jp9530055
    end if
   end do do_j_search_staggering
-  !
   !
 ! Close units:
   close(unit=sio_unit, iostat=ios)
