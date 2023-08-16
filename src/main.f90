@@ -252,6 +252,7 @@ module GeneralVariables
  integer                                      :: n_files = 0
  logical                                      :: generate_list_file = .false.
  logical                                      :: preoptimization_flag = .false.
+ logical                                      :: compare_flag = .true.
  logical                                      :: opti_flag = .true.
  logical                                      :: shellonly_flag = .false.
  logical                                      :: restart_flag = .false.
@@ -749,7 +750,7 @@ module GetStructures
  use vector_module
  implicit none
  private
- public GenerateCIFFileList, ReadListOfCIFFiles, AnalysisCIFFileList
+ public GenerateCIFFileList, ReadListOfCIFFiles, AnalysisCIFFileList, CompareTwoCIFFiles
  contains
 !
  subroutine GenerateCIFFileList()
@@ -826,6 +827,60 @@ module GetStructures
   return
  end subroutine
 ! ..............................................................................
+ subroutine CompareTwoCIFFiles(n_files,CIFFiles)
+   implicit none
+   integer,intent(in)          :: n_files
+   type(CIFfile),intent(inout) :: CIFFiles(n_files)
+   ! local
+   integer                     :: i,j,ierr,u
+   real,allocatable            :: DistanceMatrix(:,:)
+   real                        :: r, r3(1:3), cell_tmp(1:6),rv_tmp(1:3,1:3)
+   character(len=100)          :: line
+   write(6,'(a)')'======= Starting label matching ======='
+   open(newunit=u,file="list",iostat=ierr)
+   if (ierr/=0) stop "[ERROR] Problem with list file"
+   read_CIFFiles_matching: do i=1,n_files
+    read(u,'(a)')line
+    read(line(1:49),'(a)') CIFFiles(i)%filename
+    write(6,'(a,1x,a)')"File name:",trim(CIFFiles(i)%filename)
+    call ReadCIFFile(CIFFiles(i),"rasp",.false.)
+   end do read_CIFFiles_matching
+   ! Matching atoms:
+   write(6,*)(CIFFiles(1)%cell_0(i),i=1,6)
+   write(6,*)(CIFFiles(2)%cell_0(i),i=1,6)
+   cell_tmp(1:6) = CIFFiles(2)%cell_0(1:6)
+   rv_tmp(1:3,1:3) = CIFFiles(2)%rv(1:3,1:3)
+   CIFFiles(2)%cell_0(1:6) = CIFFiles(1)%cell_0(1:6)
+   CIFFiles(2)%rv(1:3,1:3) = CIFFiles(1)%rv(1:3,1:3)
+   !
+   if(CIFFiles(1)%n_atoms /= CIFFiles(2)%n_atoms) then
+     STOP "Comparing structures with different number of atoms"
+   else
+     allocate(DistanceMatrix(1:CIFFiles(1)%n_atoms,1:CIFFiles(2)%n_atoms))
+     do i=1,CIFFiles(1)%n_atoms
+      do j=1,CIFFiles(2)%n_atoms
+        call make_distances(.false.,&
+              vector2array(CIFFiles(1)%atom(i)%uCoordinate), &
+              vector2array(CIFFiles(2)%atom(j)%uCoordinate),&
+              CIFFiles(1)%rv,r3,r)
+        if ( r < 0.5 ) then
+          write(6,*) 'Matching:', r, &
+           CIFFiles(1)%atom(i)%label_from_CIFFile, CIFFiles(2)%atom(j)%label_from_CIFFile 
+          CIFFiles(2)%atom(j)%label_from_CIFFile = CIFFiles(1)%atom(i)%label_from_CIFFile
+        end if
+      end do
+     end do
+   end if
+   CIFFiles(2)%cell_0(1:6) = cell_tmp(1:6)
+   CIFFiles(2)%rv(1:3,1:3) = rv_tmp(1:3,1:3)
+   do i = 1, CIFFiles(2)%n_atoms
+    r3 = vector2array(CIFFiles(2)%atom(i)%uCoordinate)
+    write(6,'(a,1x,3(f20.10,1x))') CIFFiles(2)%atom(i)%label_from_CIFFile,&
+     ( r3(j) ,j=1,3)
+   end do
+   return
+ end subroutine
+! 
  subroutine AnalysisCIFFileList(n_files,CIFFiles)
    implicit none
    real                        :: energy = 0.0
@@ -839,6 +894,7 @@ module GetStructures
    type(CIFfile),intent(inout) :: CIFFiles(n_files)
    type(CollectiveVariable)    :: Descriptor(1:8)
    character(len=100)          :: line = " "
+   write(6,'(a)')'======= Starting Analysis ======='
    open(newunit=u,file="list",iostat=ierr)
    if (ierr/=0) stop "[ERROR] Problem with list file"
    read_CIFFiles: do i=1,n_files
@@ -851,8 +907,8 @@ module GetStructures
      call system("cp "//trim(CIFFiles(i)%filename)//" "//trim(CIFFiles(i)%filename)//".back")
      call system("mv "//adjustl(CIFFiles(i)%filename(1:clen_trim(CIFFiles(i)%filename)-4))//"_opt.cif "//&
           trim(CIFFiles(i)%filename))
+     call ReadCIFFile(CIFFiles(i),"rasp",.true.)
     end if
-    call ReadCIFFile(CIFFiles(i),"rasp",.true.)
     !call output_extended_xyz(CIFFiles(i))
     call TopologicalAnalysis(CIFFiles(i), Descriptor)
     energy = CIFFiles(i)%energy/(CIFFiles(i)%n_atoms/3.0)
@@ -1627,6 +1683,12 @@ program ZeoAnalyser
  end if
  do i=1,num_args
   select case(args(i))
+   case ('-c2','--compare')
+    generate_list_file = .false.
+    opti_flag = .false.
+    shellonly_flag = .false.
+    restart_flag = .false.
+    compare_flag = .true.
    case ('-nl','--no-create-list')
     generate_list_file = .false.
     opti_flag = .false.
@@ -1648,7 +1710,10 @@ program ZeoAnalyser
  call ReadListOfCIFFiles(n_files)
  allocate( CIFFiles(1:n_files) )
  write(6,'(a,1x,i6)')'Detected CIF Files:', n_files
- write(6,'(a)')'======= Starting Analysis ======='
+ if(compare_flag) then
+   call CompareTwoCIFFiles(n_files,CIFFiles)
+   STOP "program matching finished"
+ end if
  call AnalysisCIFFileList(n_files,CIFFiles)
  deallocate(CIFFiles)
  stop "Program finished"
