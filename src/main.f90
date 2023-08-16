@@ -252,7 +252,7 @@ module GeneralVariables
  integer                                      :: n_files = 0
  logical                                      :: generate_list_file = .false.
  logical                                      :: preoptimization_flag = .false.
- logical                                      :: compare_flag = .true.
+ logical                                      :: compare_flag = .false.
  logical                                      :: opti_flag = .true.
  logical                                      :: shellonly_flag = .false.
  logical                                      :: restart_flag = .false.
@@ -873,10 +873,13 @@ module GetStructures
    end if
    CIFFiles(2)%cell_0(1:6) = cell_tmp(1:6)
    CIFFiles(2)%rv(1:3,1:3) = rv_tmp(1:3,1:3)
+   write(6,'(a)')'#================================================================'
    do i = 1, CIFFiles(2)%n_atoms
     r3 = vector2array(CIFFiles(2)%atom(i)%uCoordinate)
-    write(6,'(a,1x,3(f20.10,1x))') CIFFiles(2)%atom(i)%label_from_CIFFile,&
-     ( r3(j) ,j=1,3)
+    write(6,'(2(a,1x),3(f20.10,1x))') &
+     CIFFiles(2)%atom(i)%element,&
+     CIFFiles(2)%atom(i)%label_from_CIFFile,&
+     (r3(j),j=1,3)
    end do
    return
  end subroutine
