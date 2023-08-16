@@ -865,7 +865,7 @@ module GetStructures
               CIFFiles(1)%rv,r3,r)
         if ( r < 0.5 ) then
           write(6,*) 'Matching:', r, &
-           CIFFiles(1)%atom(i)%label_from_CIFFile, CIFFiles(2)%atom(j)%label_from_CIFFile 
+            CIFFiles(1)%atom(i)%label_from_CIFFile, CIFFiles(2)%atom(j)%label_from_CIFFile 
           CIFFiles(2)%atom(j)%label_from_CIFFile = CIFFiles(1)%atom(i)%label_from_CIFFile
         end if
       end do
@@ -876,8 +876,7 @@ module GetStructures
    write(6,'(a)')'#================================================================'
    do i = 1, CIFFiles(2)%n_atoms
     r3 = vector2array(CIFFiles(2)%atom(i)%uCoordinate)
-    write(6,'(2(a,1x),3(f20.10,1x))') &
-     CIFFiles(2)%atom(i)%element,&
+    write(6,'(a,1x,3(f20.10,1x))') &
      CIFFiles(2)%atom(i)%label_from_CIFFile,&
      (r3(j),j=1,3)
    end do
