@@ -1,7 +1,7 @@
 data_STW
 
 _audit_creation_method RASPA-1.0
-_audit_creation_date 2023-4-20
+_audit_creation_date 2024-2-5
 _audit_author_name 'Salvador Rodríguez Gómez'
 
 _cell_length_a    11.887

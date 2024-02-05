@@ -1,8 +1,9 @@
 ! ZEOLYSIS code:
+! updated: Feb 5 2024
 ! --------------
 ! By Salvador R.G. Balestra, 2020,1) A. R. Ruiz-Salvador, 1), and Rocio Semino,2)
-!    1) Departamento de Sistemas Físicos, Químicos y Naturales, Universidad Pablo de Olavide, Seville, Spain
-!    2) Institute Charles Gerhardt Montpellier, Montpellier, France
+!  1) Departamento de Sistemas Físicos, Químicos y Naturales, Universidad Pablo de Olavide, Seville, Spain
+!  2) Institute Charles Gerhardt Montpellier, Montpellier, France
 !
 ! This code calculates angle distributions in zeolitic structures
 ! The code analyses CIF files. The CIF File is provided by input a list file
@@ -223,6 +224,10 @@ module types
   real              :: Sum_SiOSi_angle
   real              :: Sum_SiOSi_dot_SiO_product
   real              :: Sum_rho
+  integer           :: n_TO, n_TOT, n_TT
+  real              :: TT(1:4)
+  real              :: TO(1:4)
+  real              :: TOT(1:4)
   real              :: charge
   real              :: Q
   real              :: radius
@@ -700,7 +705,7 @@ end function
   else 
    CIFFiles%energy = 0.0
   end if
-  deallocate(CIFFiles%atom)
+  !deallocate(CIFFiles%atom)
   return
  end subroutine output_gulp
 !
@@ -887,6 +892,7 @@ module GetStructures
    implicit none
    real                        :: energy = 0.0
    real                        :: lene = 0.0
+   real                        :: lene2 = 0.0
    real                        :: FD = 0.0
    real,parameter              :: Quartz = -128.703350846667
    real,parameter              :: eV2kJmol = 96.48530749925793
@@ -894,7 +900,7 @@ module GetStructures
    integer                     :: ierr = 0
    integer,intent(in)          :: n_files
    type(CIFfile),intent(inout) :: CIFFiles(n_files)
-   type(CollectiveVariable)    :: Descriptor(1:8)
+   type(CollectiveVariable)    :: Descriptor(1:9)
    character(len=100)          :: line = " "
    write(6,'(a)')'======= Starting Analysis ======='
    open(newunit=u,file="list",iostat=ierr)
@@ -903,26 +909,32 @@ module GetStructures
     read(u,'(a)')line
     read(line(1:49),'(a)') CIFFiles(i)%filename
     write(6,'(a,1x,a)')"File name:",trim(CIFFiles(i)%filename)
-    call ReadCIFFile(CIFFiles(i),"rasp",.false.)
+    !call ReadCIFFile(CIFFiles(i),"rasp",.false.)
+    !if(opti_flag)then
+    ! call output_gulp(CIFFiles(i))
+    ! call system("cp "//trim(CIFFiles(i)%filename)//" "//trim(CIFFiles(i)%filename)//".back")
+    ! call system("mv "//adjustl(CIFFiles(i)%filename(1:clen_trim(CIFFiles(i)%filename)-4))//"_opt.cif "//&
+    !      trim(CIFFiles(i)%filename))
+    ! !call ReadCIFFile(CIFFiles(i),"rasp",.true.)
+    !end if
+    call ReadCIFFile(CIFFiles(i),"rasp",.true.)
     call output_gulp(CIFFiles(i))
-    if(opti_flag)then
-     call system("cp "//trim(CIFFiles(i)%filename)//" "//trim(CIFFiles(i)%filename)//".back")
-     call system("mv "//adjustl(CIFFiles(i)%filename(1:clen_trim(CIFFiles(i)%filename)-4))//"_opt.cif "//&
-          trim(CIFFiles(i)%filename))
-     call ReadCIFFile(CIFFiles(i),"rasp",.true.)
-    end if
     !call output_extended_xyz(CIFFiles(i))
     call TopologicalAnalysis(CIFFiles(i), Descriptor)
     energy = CIFFiles(i)%energy/(CIFFiles(i)%n_atoms/3.0)
     lene = LEnergy((1000.0*CIFFiles(i)%n_atoms/3.0)/volume(CIFFiles(i)%rv),Descriptor)
+    lene2 = LEnergyF2((1000.0*CIFFiles(i)%n_atoms/3.0)/volume(CIFFiles(i)%rv),Descriptor)
     FD = (1000.0*CIFFiles(i)%n_atoms/3.0)/volume(CIFFiles(i)%rv)
-    write(6,'(a,3(f20.10,1x,a))')'Energy: ', energy-Quartz,'[eV/T], Estimated:', lene-Quartz, &
-      '[eV/T], Absolute Error:', abs(energy-lene),'[eV/T]'
-    write(6,'(a,3(f20.10,1x,a))')'Energy: ',eV2kJmol*(energy-Quartz),'[kJ/mol], Estimated:',&
-      eV2kJmol*(lene-Quartz), '[kJ/mol], Absolute Error:', eV2kJmol*abs(energy-lene),'[kJ/mol]'
+    write(6,'(a,5(f20.10,1x,a))')'Energy: ', &
+      energy, '[eV/T], Estimated:', &
+      lene-Quartz, '[eV/T], Absolute Error:', &
+      abs(energy-lene),'[eV/T], Estimated [short range]:', &
+      lene2-Quartz, '[eV/T], Absolute Error [short range]:', &
+      abs(energy-lene2),'[eV/T]'
     write(6,'(a,f20.10,1x,a)')'Density:', FD,'[A^3/1000T]'
     write(6,'(a,f20.10,1x,a)')'Energy density: ',1000.0*(energy-Quartz)/FD, '[eV/A^3]'
     write(6,'(30a,5a,30a)')("=",k=1,30),' End ',("=",k=1,30)
+    !deallocate(CIFFiles)
    end do read_CIFFiles
    close(u)
    return
@@ -1037,7 +1049,6 @@ module GetStructures
     end if
    end do read_xyz
    close(uu)
-   !deallocate(CIF%atom)
    return
  end subroutine ReadCIFFile
 !
@@ -1075,17 +1086,19 @@ module GetStructures
   implicit none
   type(CIFfile),intent(inout) :: CIF
   type(vector)             :: v1, v2, v3, v4
-  type(CollectiveVariable),intent(out) :: Descriptor(1:8)
+  type(CollectiveVariable),intent(out) :: Descriptor(1:9)
   integer                  :: i, j, k, l, m, n, o, N_Q
   integer                  :: sio_unit, osio_unit, siosi_unit, ooo_unit, sisisi_unit, sisi_unit, q_unit,NMR_SiSi_unit
+  integer                  :: oo_unit
   integer                  :: n_bends, ios, bends_unit, staggering_unit
   real                     :: DistanceMatrix(CIF%n_atoms,CIF%n_atoms)
   logical                  :: ConnectedAtoms(CIF%n_atoms,CIF%n_atoms)
   logical                  :: flag =.false.
   real                     :: r, r1(1:3), r2(1:3), r3(1:3), r4(1:3), angle, angle_tmp, theta, rho, dd, r_rho
+  real                     :: ave_TO, ave_TT, ave_TOT, dev_TO , dev_TOT, dev_TT
   character(len=20)        :: abc
   character(len=100)       :: sio_file_name,  sisisi_file_name,NMR_SiSi_filename
-  character(len=100)       :: osio_file_name, siosi_file_name, ooo_file_name
+  character(len=100)       :: osio_file_name, siosi_file_name, ooo_file_name, oo_file_name
   real, parameter          :: r_min_criteria_connectivity = 0.15, degtorad = acos(-1.0)/180.0
   integer, parameter       :: n_bends_max = 10000000
   logical                  :: check_visited = .false.
@@ -1104,6 +1117,7 @@ module GetStructures
 ! Descriptor: density, TO, OTO, TOT, TTT, TT, Q, Energy
 ! -----------------------------------------------------------
   sio_file_name=CIF%filename(1:clen_trim(CIF%filename)-4)//"_sio.dat"
+  oo_file_name=CIF%filename(1:clen_trim(CIF%filename)-4)//"_oo.dat"
   osio_file_name=CIF%filename(1:clen_trim(CIF%filename)-4)//"_osio.dat"
   siosi_file_name=CIF%filename(1:clen_trim(CIF%filename)-4)//"_siosi.dat"
   ooo_file_name=CIF%filename(1:clen_trim(CIF%filename)-4)//"_ooo.dat"
@@ -1116,8 +1130,13 @@ module GetStructures
 ! File units:
   osio_unit = 900 ; siosi_unit = 901 ; ooo_unit = 902        ; sisisi_unit = 903 ; NMR_SiSi_unit = 908
   q_unit    = 904 ; bends_unit = 905 ; staggering_unit = 906 ; sisi_unit   = 907 ; sio_unit = 777
+  oo_unit   = 999
+! 
+  write(6,'(a)')'[DEV] Opening units [...]'
 !
   open(unit=sio_unit, file=sio_file_name, iostat=ios)
+  if ( ios /= 0 ) stop "Error opening sio file "
+  open(unit=oo_unit, file=oo_file_name, iostat=ios)
   if ( ios /= 0 ) stop "Error opening sio file "
   open(unit=osio_unit, file=osio_file_name, iostat=ios)
   if ( ios /= 0 ) stop "Error opening osio file "
@@ -1136,14 +1155,14 @@ module GetStructures
   open(unit=NMR_SiSi_unit, file=NMR_SiSi_filename, iostat=ios)
   if( ios /= 0 ) stop "Error opening file q_filename"
 !
-  write(6,'(a)')'Detecting natural bonds [...]'
+  write(6,'(a)')'[DEV] Detecting natural bonds [...]'
 !
   DistanceMatrix = 0.0
   ConnectedAtoms = .false.
   CIF%atom(:)%degree = 0.0
   CIF%atom(:)%Sum_SiOSi_angle = 0.0; CIF%atom(:)%Sum_rho=0.0
   CIF%atom(:)%Sum_SiSi_d= 0.0; CIF%atom(:)%Sum_SiOSi_dot_SiO_product=0.0
-!
+  CIF%atom(:)%n_TO = 0; CIF%atom(:)%n_TOT = 0; CIF%atom(:)%n_TT = 0
   do_i_bond: do i = 1, CIF%n_atoms
    do_j_bond: do j = i + 1, CIF%n_atoms
     call make_distances(.false.,vector2array(CIF%atom(j)%uCoordinate), &
@@ -1174,10 +1193,10 @@ module GetStructures
    if(CIF%atom(i)%element == 8) then
     do_j_search_OOO: do j=1,CIF%n_atoms                                     ! Si, j
      if(CIF%atom(j)%element == 14.and.ConnectedAtoms(i,j)) then
-      !write(6,*) '{DEV}', DistanceMatrix(i,j), i, j
       write(sio_unit,*) DistanceMatrix(i,j)
       do_k_search_OOO: do k=1,CIF%n_atoms                                   ! O,  k
        if(CIF%atom(k)%element == 8.and.ConnectedAtoms(j,k).and.k/=i) then
+        write(oo_unit,*) DistanceMatrix(i,k)
 !       O - Si - O angle: i,j,k
         if (.not.visited_angle(check_visited,i,j,k,n_bends,bends(0:n_bends-1)(1:21))) then
          call ThreeCoordinatesInSameSpace( CIF%rv,&
@@ -1268,6 +1287,55 @@ module GetStructures
     end do do_j_search_OOO
    end if
   end do do_i_search_OOO
+! Statistics per Si atom:
+! -----------------------
+  CIF%atom%n_TO  = 0
+  CIF%atom%n_TT  = 0
+  CIF%atom%n_TOT = 0
+!
+  do_j_search_TOT: do j=1,CIF%n_atoms
+   if( CIF%atom(j)%element == 14 ) then                                            ! T-atom, j
+    do_i_search_TOT: do i=1,CIF%n_atoms
+     if ( CIF%atom(i)%element == 8 .and. ConnectedAtoms(i,j) .and. i/=j ) then     ! O-atom, i
+!     -------------------
+!     T - O distance: j,i
+!     -------------------
+      CIF%atom(j)%n_TO = CIF%atom(j)%n_TO + 1
+      CIF%atom(j)%TO( CIF%atom(j)%n_TO ) = DistanceMatrix(i,j)
+!
+      do_k_search_TOT: do k=1,CIF%n_atoms
+       if( CIF%atom(j)%element == 14 .and. ConnectedAtoms(i,k) .and. k/=j ) then   ! T-atom, k
+!       --------------------
+!       T - T distances: j,k
+!       --------------------
+        CIF%atom(j)%n_TT = CIF%atom(j)%n_TT + 1
+        CIF%atom(j)%TT ( CIF%atom(j)%n_TT ) = DistanceMatrix(j,k)
+
+!       -----------------------
+!       T - O - T angles: j,i,k
+!       -----------------------
+        call ThreeCoordinatesInSameSpace( CIF%rv,&
+            Vector2Array(CIF%atom(j)%uCoordinate),&
+            Vector2Array(CIF%atom(i)%uCoordinate),&
+            Vector2Array(CIF%atom(k)%uCoordinate),&
+            r1,r2,r3 )
+        v1=Array2Vector(Crystal2BoxCoordinates(CIF%rv,r1))
+        v2=Array2Vector(Crystal2BoxCoordinates(CIF%rv,r2))
+        v3=Array2Vector(Crystal2BoxCoordinates(CIF%rv,r3))
+        angle = angle3vectors_jik(v2,v1,v3)/degtorad
+        CIF%atom(j)%n_TOT = CIF%atom(j)%n_TOT + 1
+        CIF%atom(j)%TOT ( CIF%atom(j)%n_TOT ) = angle
+
+       end if
+      end do do_k_search_TOT
+     end if
+    end do do_i_search_TOT
+!   Print Si properties:
+!   --------------------
+!    write(6,*) j, CIF%atom(j)%TO(1:4)
+   end if
+  end do do_j_search_TOT
+!
   open(unit=bends_unit, file=bends_filename, iostat=ios)
   if ( ios /= 0 ) stop "Error opening file bends_filename"
   do i=1,n_bends
@@ -1281,12 +1349,12 @@ module GetStructures
 ! and 29Si NMR chemical Shift
 ! https://pubs.acs.org/doi/suppl/10.1021/jacs.5b08098/suppl_file/ja5b08098_si_001.pdf
   do_i_search_q: do i=1,CIF%n_atoms
-   if(CIF%atom(i)%element == 14) then
+   if(CIF%atom(i)%element == 14) then                                                 ! T-atom
     N_Q=N_Q+1
     q_l = 0.0
     l = 0
     do_j_search_q: do j=1,CIF%n_atoms
-     if( CIF%atom(j)%element == 8.and.ConnectedAtoms(j,i)) then
+     if( CIF%atom(j)%element == 8.and.ConnectedAtoms(j,i)) then                       ! O-atom
      do_k_search_q: do k=1,CIF%n_atoms
       if (CIF%atom(k)%element == 8.and.ConnectedAtoms(i,k).and.j/=k) then
        q_m = 0.0 
@@ -1354,10 +1422,8 @@ module GetStructures
        angle = angle3vectors_jik(v2,v1,v3)/degtorad
        CIF%atom(j)%Sum_SiOSi_angle=CIF%atom(j)%Sum_SiOSi_angle+angle
        CIF%atom(l)%Sum_SiOSi_angle=CIF%atom(l)%Sum_SiOSi_angle+angle
-! angle SiOSi:
        CIF%atom(j)%Sum_rho = CIF%atom(j)%Sum_rho + cos(angle/degtorad)/(cos(angle/degtorad)+1)
        CIF%atom(l)%Sum_rho = CIF%atom(l)%Sum_rho + cos(angle/degtorad)/(cos(angle/degtorad)+1)
-! Sum_SiOSi_dot_SiO_product
        rho = cos(degtorad*angle)/(cos(degtorad*angle)+1)
        CIF%atom(j)%Sum_SiOSi_dot_SiO_product=CIF%atom(j)%Sum_SiOSi_dot_SiO_product+&
               rho * DistanceMatrix(j,k)
@@ -1429,22 +1495,32 @@ module GetStructures
     end if
     end do do_k_search_staggering
     ! Write NMR estimation from literature:
-    theta  = CIF%atom(j)%Sum_SiOSi_angle/4.0           ! [deg.]
+!    theta  = CIF%atom(j)%Sum_SiOSi_angle/4.0           ! [deg.]
     rho    = CIF%atom(j)%Sum_rho/4.0 
     dd     = CIF%atom(j)%Sum_SiSi_d/4.0                ! [A]
-    r_rho = CIF%atom(j)%Sum_SiOSi_dot_SiO_product/4.0
-    write(NMR_SiSi_unit,*) j, &
-     -25.44 - 0.5793*theta,&  ! Thomas et al., Chem. Phys. Lett., 102, 1983, 158-162, 10.1016/0009-2614(83)87384-9
-     247.6 - 116.7*dd,     &  ! Fyfe et al., Nature, 326, 281-283, 1987, 10.1038/326281a0
-     theta,rho,dd
-    !   2.19-247.05*rho,  &  ! Engelhardt and Radeglia, Chem. Phys. Lett., 108, 1984, 271-274, 10.1016/0009-2614(84)87063-3
-    !  48.54-216.96*r_rho    ! Davis et al., J. Phys. Chem., 100 (1996), 5039-5049, 10.1021/jp9530055
+    r_rho  = CIF%atom(j)%Sum_SiOSi_dot_SiO_product/4.0
+! Averages per T-atom:
+    ave_TO  = sum( CIF%atom(j)%TO(1: CIF%atom(j)%n_TO ) )/ real( CIF%atom(j)%n_TO )
+    ave_TOT = sum( CIF%atom(j)%TOT(1: CIF%atom(j)%n_TOT ) )/ real( CIF%atom(j)%n_TOT )
+    ave_TT  = sum( CIF%atom(j)%TT(1: CIF%atom(j)%n_TT ) )/ real( CIF%atom(j)%n_TT )
+    dev_TO  = sqrt(sum( ( CIF%atom(j)%TO(1: CIF%atom(j)%n_TO )-ave_TO)**2 )/ real( CIF%atom(j)%n_TO ))
+    dev_TOT = sqrt(sum( ( CIF%atom(j)%TOT(1: CIF%atom(j)%n_TOT )-ave_TOT)**2) / real( CIF%atom(j)%n_TOT ))
+    dev_TT  = sqrt(sum( ( CIF%atom(j)%TT(1: CIF%atom(j)%n_TT )-ave_TT)**2 )/ real( CIF%atom(j)%n_TT ))
+! -------------------
+!    write(6,*)'[dev]', ave_TO, ave_TT, ave_TOT, dev_TO, dev_TOT, dev_TT, CIF%atom(j)%n_TO, CIF%atom(j)%n_TOT, CIF%atom(j)%n_TT
+    write(NMR_SiSi_unit,*) j,  &
+     247.6 - 116.7*ave_TT,     &  ! Fyfe et al., Nature, 326, 281-283, 1987, 10.1038/326281a0
+      11.531*ave_TO + 27.280*dev_TO + 83.730*cos(ave_TOT*degtorad) + 0.20246*dev_TOT - 59.999,& ! Dawson et al (J. Phys. Chem. C 2017, 121, 15198−15210),
+     -25.44 - 0.5793*ave_TOT  ! Thomas et al., Chem. Phys. Lett., 102, 1983, 158-162, 10.1016/0009-2614(83)87384-9
    end if
   end do do_j_search_staggering
   !
 ! Close units:
+  write(6,'(a)')'[DEV] Closing units'
   close(unit=sio_unit, iostat=ios)
   if ( ios /= 0 ) stop "Error closing file sio_unit"
+  close(unit=oo_unit, iostat=ios)
+  if ( ios /= 0 ) stop "Error closing file oo_unit"
   close(unit=NMR_SiSi_unit, iostat=ios)
   if ( ios /= 0 ) stop "Error closing file NMR_unit"
   close(unit=sisi_unit, iostat=ios)
@@ -1464,8 +1540,13 @@ module GetStructures
   close(q_unit, iostat=ios)
   if ( ios /= 0 ) stop "Error closing file Q unit "
 ! Histograms:
+  write(6,'(a,a)')&
+  "                         Average              Maximun              Minimun              Standard Devia.      Skewness",&
+  "             Kurtosis"
   label="Histo: Si-O"
   call HistogramsByFile(sio_unit,sio_file_name,label,Descriptor(1))
+  label="Histo: O-O"
+  call HistogramsByFile(oo_unit,oo_file_name,label,Descriptor(9))
   label="Histo: Si-Si"
   call HistogramsByFile(sisi_unit,sisi_filename,label,Descriptor(2))
   label="Histo: O-Si-O   "
@@ -1496,7 +1577,10 @@ module GetStructures
   real                                 :: ave,adev,sdev,var,skew,curt,suma,max_,min_
   real, allocatable                    :: data_(:)
   open(unit=descriptor_unit, file=descriptor_file, iostat=ios)
-  if ( ios /= 0 ) stop "Error opening file"
+  if ( ios /= 0 ) then
+   write(6,*) ios, descriptor_unit, descriptor_file
+   stop "Error opening file"
+  end if
   n_datos=0
   do
    read(descriptor_unit,'(a)',iostat=ios) line
@@ -1530,7 +1614,7 @@ module GetStructures
  real function LEnergy(FD,D)
   implicit none
   real,intent(in)                     :: FD
-  type(CollectiveVariable),intent(in) :: D(1:7)
+  type(CollectiveVariable),intent(in) :: D(1:9)
   real,parameter                      :: Quartz = -128.703350846667
 
   LEnergy = 0.0
@@ -1606,6 +1690,123 @@ module GetStructures
 ! TTT            & 101.5302 & 112.7831 & 48.74126 & 108.6046 & 109.9063 & 180.0000
   return
  end function LEnergy
+
+
+ real function LEnergyF2(FD,D)
+  implicit none
+  real,intent(in)                     :: FD
+  type(CollectiveVariable),intent(in) :: D(1:9)
+  real,parameter                      :: Quartz = -128.703350846667
+! Variables:
+! ---------
+! call HistogramsByFile(oo_unit,oo_file_name,label,Descriptor(9))
+! call HistogramsByFile(sisi_unit,sisi_filename,label,Descriptor(2))
+! call HistogramsByFile(osio_unit,osio_file_name,label,Descriptor(3))
+! call HistogramsByFile(siosi_unit,siosi_file_name,label,Descriptor(4))
+! call HistogramsByFile(sisisi_unit,sisisi_file_name,label,Descriptor(5))
+! call HistogramsByFile(ooo_unit,ooo_file_name,label,Descriptor(6))
+! call HistogramsByFile(q_unit,q_filename,label,Descriptor(7))
+! call HistogramsByFile(NMR_SiSi_unit,NMR_SiSi_filename,label,Descriptor(8))
+
+  ! intercept,123417  
+  LEnergyF2 = Quartz + 123417.46568651011          &
+  ! FDensity,-0.00368647
+   -0.0036864750246390454*FD                       &
+  ! TOdistmin,1029.56
++1029.5592168193764*D(1)%min_                      & 
+  ! TOdistave,1702.69
++1702.6902918426592*D(1)%k1                        &
+  ! TOdistmax,-1120.16
+-1120.1586328033761*D(1)%max_                      &
+  ! TOdistmin2,-635.054 
+ -635.0541156870719*D(1)%min_*D(1)%min_            &
+  ! TOdistave2,-756.582
+ -756.5822655800399*D(1)%k1*D(1)%k1                &
+  ! TOdistmax2,702.369
+ +702.3688020627935*D(1)%max_*D(1)%max_            &
+!TOdistmin3,130.434
+!TOdistave3,101.348
+!TOdistmax3,-146.657
+ +130.4342061737043*D(1)%min_*D(1)%min_*D(1)%min_  &
+ +101.34822005897342*D(1)%k1*D(1)%k1*D(1)%k1       &
+ -146.65656460992264*D(1)%max_*D(1)%max_*D(1)%max_ &
+! TT-dist
+-32.790439918157574*D(2)%min_                     &
++2182.7905757288304*D(2)%k1                       &
+-435.42996598669396*D(2)%max_                     &
+!13.251348261101228,TTdistmin2
++13.251348261101228*D(2)%min_*D(2)%min_           &
+!-747.1859062682986,TTdistave2
+-747.1859062682986*D(2)%k1*D(2)%k1                &
+!136.93597927391716,TTdistmax2
++136.93597927391716*D(2)%max_*D(2)%max_           &
+!-1.7381779395926293,TTdistmin3
+-1.7381779395926293*D(2)%min_*D(2)%min_*D(2)%min_ &
+!85.37404292812043,TTdistave3
++85.37404292812043*D(2)%k1*D(2)%k1*D(2)%k1        &
+!-14.356655090642692,TTdistmax3
+-14.356655090642692*D(2)%max_*D(2)%max_*D(2)%max_ &
+! label="Histo: O-Si-O   "       3 ! OTO
+!0.6938623950823073,OTOanglemin
++0.6938623950823073*D(3)%min_                     &
+!-1360.7999035194953,OTOangleave
+-1360.7999035194953*D(3)%k1                       &
+!-0.028713701595067222,OTOanglemax
+-0.028713701595067222*D(3)%max_                   &
+!-0.006854612384858187,OTOanglemin2
+-0.006854612384858187*D(3)%min_*D(3)%min_         &
+!-6.983371818005454,OTOangleave2
+-6.983371818005454*D(3)%k1*D(3)%k1                &
+!0.00017145730305762668,OTOanglemax2
++0.00017145730305762668*D(3)%max_*D(3)%max_       &
+!2.2607476176236983e-05,OTOanglemin3
++2.2607476176236983e-05*D(3)%min_*D(3)%min_*D(3)%min_ &
+!0.0803800990229028,OTOangleave3
++0.0803800990229028*D(3)%k1*D(3)%k1*D(3)%k1       &
+!-2.4922686145747996e-07,OTOanglemax3
+-2.4922686145747996e-07*D(3)%max_*D(3)%max_*D(3)%max_ &
+! label="Histo: Si-O-Si  "       4 ! TOT
+!-0.1667417333540271,TOTanglemin
+-0.1667417333540271*D(4)%min_                     &
+!-0.5162675922741438,TOTangleave
+-0.5162675922741438*D(4)%k1                       &
+!0.0573382505717761,TOTanglemax
++0.0573382505717761*D(4)%max_                     &
+!0.0011070694059599911,TOTanglemin2
++0.0011070694059599911*D(4)%min_*D(4)%min_        &
+!0.003969687863809857,TOTangleave2
++0.003969687863809857*D(4)%k1*D(4)%k1             &
+!-0.00031545818431148335,TOTanglemax2
+-0.00031545818431148335*D(4)%max_*D(4)%max_       &
+!-2.4005112713720855e-06,TOTanglemin3
+-2.4005112713720855e-06*D(4)%min_*D(4)%min_*D(4)%min_&
+!-9.860108935666467e-06,TOTangleave3
+-9.860108935666467e-06*D(4)%k1*D(4)%k1*D(4)%k1    &
+!5.701681923819812e-07,TOTanglemax3
++5.701681923819812e-07*D(4)%max_*D(4)%max_*D(4)%max_ &
+! label="Histo: Si-Si-Si "       5 ! TTT
+!-0.009431635166714736,TTTanglemin
+-0.009431635166714736*D(5)%min_                   &
+!27.487383531158994,TTTangleave
++27.487383531158994*D(5)%k1                       &
+!0.0025814580651243708,TTTanglemax
++0.0025814580651243708*D(5)%max_                  &
+!6.116129517244747e-05,TTTanglemin2
++6.116129517244747e-05*D(5)%min_*D(5)%min_        &
+!-0.2548167171958089,TTTangleave2
+-0.2548167171958089*D(5)%k1*D(5)%k1               &
+!-7.985920123969544e-06,TTTanglemax2
+-7.985920123969544e-06*D(5)%max_*D(5)%max_        &
+!0.018357084285149275,TTTanglemin3
++0.018357084285149275*D(5)%min_*D(5)%min_*D(5)%min_&
+!-0.00878480248119494,TTTangleave3
+-0.00878480248119494*D(5)%k1*D(5)%k1*D(5)%k1      &
+!-0.008784913117360058,TTTanglemax3
+-0.008784913117360058*D(5)%max_*D(5)%max_*D(5)%max_ &
+!-0.1948055201798231,Q
+-0.1948055201798231*D(7)%k1
+  return
+ end function LEnergyF2
 !
  subroutine CheckAtom(label,m,s,z,zlabel)
   implicit none
