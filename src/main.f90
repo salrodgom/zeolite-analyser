@@ -1690,7 +1690,6 @@ module GetStructures
   return
  end function LEnergy
 
-
  real function LEnergyF2(FD,D)
   implicit none
   real,intent(in)                     :: FD
@@ -1709,19 +1708,12 @@ module GetStructures
 
   ! intercept,123417  
   LEnergyF2 = Quartz + 123417.46568651011          &
-  ! FDensity,-0.00368647
    -0.0036864750246390454*FD                       &
-  ! TOdistmin,1029.56
 +1029.5592168193764*D(1)%min_                      & 
-  ! TOdistave,1702.69
 +1702.6902918426592*D(1)%k1                        &
-  ! TOdistmax,-1120.16
 -1120.1586328033761*D(1)%max_                      &
-  ! TOdistmin2,-635.054 
  -635.0541156870719*D(1)%min_*D(1)%min_            &
-  ! TOdistave2,-756.582
  -756.5822655800399*D(1)%k1*D(1)%k1                &
-  ! TOdistmax2,702.369
  +702.3688020627935*D(1)%max_*D(1)%max_            &
 !TOdistmin3,130.434
 !TOdistave3,101.348
