@@ -705,7 +705,7 @@ end function
   else 
    CIFFiles%energy = 0.0
   end if
-  !deallocate(CIFFiles%atom)
+  deallocate(CIFFiles%atom)
   return
  end subroutine output_gulp
 !
@@ -909,32 +909,30 @@ module GetStructures
     read(u,'(a)')line
     read(line(1:49),'(a)') CIFFiles(i)%filename
     write(6,'(a,1x,a)')"File name:",trim(CIFFiles(i)%filename)
-    !call ReadCIFFile(CIFFiles(i),"rasp",.false.)
-    !if(opti_flag)then
-    ! call output_gulp(CIFFiles(i))
-    ! call system("cp "//trim(CIFFiles(i)%filename)//" "//trim(CIFFiles(i)%filename)//".back")
-    ! call system("mv "//adjustl(CIFFiles(i)%filename(1:clen_trim(CIFFiles(i)%filename)-4))//"_opt.cif "//&
-    !      trim(CIFFiles(i)%filename))
-    ! !call ReadCIFFile(CIFFiles(i),"rasp",.true.)
-    !end if
-    call ReadCIFFile(CIFFiles(i),"rasp",.true.)
+    call ReadCIFFile(CIFFiles(i),"rasp",.false.)
     call output_gulp(CIFFiles(i))
+    if(opti_flag)then
+     call system("cp "//trim(CIFFiles(i)%filename)//" "//trim(CIFFiles(i)%filename)//".back")
+     call system("mv "//adjustl(CIFFiles(i)%filename(1:clen_trim(CIFFiles(i)%filename)-4))//"_opt.cif "//&
+          trim(CIFFiles(i)%filename))
+     call ReadCIFFile(CIFFiles(i),"rasp",.true.)
+    end if
     !call output_extended_xyz(CIFFiles(i))
     call TopologicalAnalysis(CIFFiles(i), Descriptor)
     energy = CIFFiles(i)%energy/(CIFFiles(i)%n_atoms/3.0)
     lene = LEnergy((1000.0*CIFFiles(i)%n_atoms/3.0)/volume(CIFFiles(i)%rv),Descriptor)
     lene2 = LEnergyF2((1000.0*CIFFiles(i)%n_atoms/3.0)/volume(CIFFiles(i)%rv),Descriptor)
     FD = (1000.0*CIFFiles(i)%n_atoms/3.0)/volume(CIFFiles(i)%rv)
-    write(6,'(a,5(f20.10,1x,a))')'Energy: ', &
-      energy, '[eV/T], Estimated:', &
-      lene-Quartz, '[eV/T], Absolute Error:', &
-      abs(energy-lene),'[eV/T], Estimated [short range]:', &
-      lene2-Quartz, '[eV/T], Absolute Error [short range]:', &
-      abs(energy-lene2),'[eV/T]'
+    write(6,'(a,3(f20.10,1x,a))')'Energy: ', &
+      energy-Quartz, ' [eV/T], Estimated [long]:', &
+      lene-Quartz, ' [eV/T], Absolute Error:',&
+      abs(energy-lene),' [eV/T],'
+    write(6,'(a,2(f20.10,1x,a))')'                                      Estimated [short]:', &
+      lene2-Quartz, ' [eV/T], Absolute Error [short range]:', &
+      abs(energy-lene2),' [eV/T]'
     write(6,'(a,f20.10,1x,a)')'Density:', FD,'[A^3/1000T]'
     write(6,'(a,f20.10,1x,a)')'Energy density: ',1000.0*(energy-Quartz)/FD, '[eV/A^3]'
     write(6,'(30a,5a,30a)')("=",k=1,30),' End ',("=",k=1,30)
-    !deallocate(CIFFiles)
    end do read_CIFFiles
    close(u)
    return
@@ -1130,7 +1128,7 @@ module GetStructures
 ! File units:
   osio_unit = 900 ; siosi_unit = 901 ; ooo_unit = 902        ; sisisi_unit = 903 ; NMR_SiSi_unit = 908
   q_unit    = 904 ; bends_unit = 905 ; staggering_unit = 906 ; sisi_unit   = 907 ; sio_unit = 777
-  oo_unit   = 999
+  oo_unit   = 909
 ! 
   write(6,'(a)')'[DEV] Opening units [...]'
 !
@@ -1157,6 +1155,7 @@ module GetStructures
 !
   write(6,'(a)')'[DEV] Detecting natural bonds [...]'
 !
+  write(6,'(a)')'Doing zeros in arrays [1]'
   DistanceMatrix = 0.0
   ConnectedAtoms = .false.
   CIF%atom(:)%degree = 0.0
@@ -1894,16 +1893,15 @@ program ZeoAnalyser
     compare_flag = .true.
    case ('-nl','--no-create-list')
     generate_list_file = .false.
-    opti_flag = .false.
-    shellonly_flag = .false.
-    restart_flag = .false.
+    shellonly_flag = .true.
    case ('-r','--restart')
     preoptimization_flag = .true.
    case ('-s','--shellonly')
+    generate_list_file = .true.
     shellonly_flag = .true.
    case default
     generate_list_file = .true.
-    opti_flag = .false.
+    opti_flag = .true.
     shellonly_flag = .false.
     restart_flag = .false.
   end select

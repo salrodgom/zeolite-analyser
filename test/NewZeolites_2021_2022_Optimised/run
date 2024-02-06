@@ -1,4 +1,3 @@
 #!/bin/sh
 cd -- "$(dirname "$0")"
-# run the executable
 time ../../src/zeolite_analyser.exe -nl > zeolite_analyser.log
