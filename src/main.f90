@@ -241,18 +241,18 @@ module types
  end type
  ! Structure for Structure Files
  type :: CIFFile
-  character(len=100) :: filename
-  integer            :: n_atoms
-  real               :: rv(1:3,1:3)
-  real               :: vr(1:3,1:3)
-  real               :: cell_0(1:6)
-  real               :: energy
-  type(particle), allocatable, dimension(:) :: atom
- end type
-end module types
-!
-module GeneralVariables
- use types
+  character(len=100)                          :: filename
+  integer                                     :: n_atoms
+  real                                        :: rv(1:3,1:3)
+  real                                        :: vr(1:3,1:3)
+  real                                        :: cell_0(1:6)
+  real                                        :: energy
+  type(particle), allocatable, dimension(:)   :: atom
+ end type                                     
+end module types                              
+!                                             
+module GeneralVariables                       
+ use types                                    
  type(CIFfile),allocatable                    :: CIFFiles(:)
  integer                                      :: n_files = 0
  logical                                      :: generate_list_file = .false.
@@ -923,13 +923,15 @@ module GetStructures
     lene = LEnergy((1000.0*CIFFiles(i)%n_atoms/3.0)/volume(CIFFiles(i)%rv),Descriptor)
     lene2 = LEnergyF2((1000.0*CIFFiles(i)%n_atoms/3.0)/volume(CIFFiles(i)%rv),Descriptor)
     FD = (1000.0*CIFFiles(i)%n_atoms/3.0)/volume(CIFFiles(i)%rv)
-    write(6,'(a,3(f20.10,1x,a))')'Energy: ', &
+    !First function: from [0:3] eV
+    write(6,'(a,3(f20.10,1x,a))')'Energy [SLC]: ', &
       energy-Quartz, ' [eV/T], Estimated [long]:', &
-      lene-Quartz, ' [eV/T], Absolute Error:',&
+      lene-Quartz, ' [eV/T], Absolute Error [long]:',&
       abs(energy-lene),' [eV/T],'
-    write(6,'(a,2(f20.10,1x,a))')'                                      Estimated [short]:', &
-      lene2-Quartz, ' [eV/T], Absolute Error [short range]:', &
-      abs(energy-lene2),' [eV/T]'
+    !Second function: 
+    !write(6,'(a,2(f20.10,1x,a))')'                                      Estimated [short]:', &
+    !  lene2-Quartz, ' [eV/T], Absolute Error [short]:', &
+    !  abs(energy-lene2),' [eV/T]'
     write(6,'(a,f20.10,1x,a)')'Density:', FD,'[A^3/1000T]'
     write(6,'(a,f20.10,1x,a)')'Energy density: ',1000.0*(energy-Quartz)/FD, '[eV/A^3]'
     write(6,'(30a,5a,30a)')("=",k=1,30),' End ',("=",k=1,30)
@@ -1606,18 +1608,18 @@ module GetStructures
  pure real function norm(x,xmin,xmax)
   implicit none
   real,intent(in) :: x,xmin,xmax
-  norm = (x - xmin)/abs(xmax - xmin)
+  norm = (x - xmin) / abs(xmax - xmin)
   return
  end function  norm
 !
- real function LEnergy(FD,D)
+ pure real function LEnergy(FD,D)
   implicit none
   real,intent(in)                     :: FD
   type(CollectiveVariable),intent(in) :: D(1:9)
   real,parameter                      :: Quartz = -128.703350846667
-
   LEnergy = 0.0
 ! Variables:
+! ----------
 ! label="Histo: Si-O"            1 ! TO
 ! label="Histo: Si-Si"           2 ! TT
 ! label="Histo: O-Si-O   "       3 ! OTO
@@ -1625,7 +1627,18 @@ module GetStructures
 ! label="Histo: Si-Si-Si "       5 ! TTT
 ! label="Histo: O-O-O    "       6 ! OOO
 ! label="Histo: Q        "       7 ! Q
-
+!
+! Data for normalization:
+! -----------------------
+!Descriptor type & AVE min  &  AVE max &  Min min & Min max  & Max min  & Max max
+!----------------------------------------------------------------------------------
+! FD             & 7.7461   &  37.9034 &  -       & -        & -        & -
+! Q              & 0.2100   &  1.0000  &  -       & -        & -        & -
+! TO             & 1.5742   &  1.6660  &  1.3282  & 1.6548   & 1.5744   & 1.8713
+! OTO            & 105.9392 & 109.9492 &  63.5395 & 109.4616 & 109.4808 & 163.6060
+! TOT            & 123.9087 & 175.7053 &  90.9591 & 170.6157 & 124.6023 & 180.0000
+! TT             & 2.8329   &   3.2351 &   2.2673 &   3.2072 &   2.9105 &   3.6102
+! TTT            & 101.5302 & 112.7831 & 48.74126 & 108.6046 & 109.9063 & 180.0000
   LEnergy = 4.9554 &
   -2.0333 * norm(D(1)%min_,1.3282,1.6548)          & ! TO
   +0.3717 * norm(D(1)%k1,1.5742,1.6660)            &
@@ -1674,23 +1687,11 @@ module GetStructures
   +0.0475 * (norm(D(5)%max_,109.9063,180.0000))**3 &
   -0.3741 * norm(FD,7.7461,37.9034)                &  ! FD
   -0.7575 * norm(D(7)%k1,0.2100,1.0000)               ! Q
-!
   LEnergy = LEnergy + Quartz
-! Data for normalization:
-! -----------------------
-!Descriptor type & AVE min  &  AVE max &  Min min & Min max  & Max min  & Max max
-!----------------------------------------------------------------------------------
-! FD             & 7.7461   &  37.9034 &  -       & -        & -        & -
-! Q              & 0.2100   &  1.0000  &  -       & -        & -        & -
-! TO             & 1.5742   &  1.6660  &  1.3282  & 1.6548   & 1.5744   & 1.8713
-! OTO            & 105.9392 & 109.9492 &  63.5395 & 109.4616 & 109.4808 & 163.6060
-! TOT            & 123.9087 & 175.7053 &  90.9591 & 170.6157 & 124.6023 & 180.0000
-! TT             & 2.8329   &   3.2351 &   2.2673 &   3.2072 &   2.9105 &   3.6102
-! TTT            & 101.5302 & 112.7831 & 48.74126 & 108.6046 & 109.9063 & 180.0000
   return
  end function LEnergy
 
- real function LEnergyF2(FD,D)
+ pure real function LEnergyF2(FD,D)
   implicit none
   real,intent(in)                     :: FD
   type(CollectiveVariable),intent(in) :: D(1:9)
@@ -1707,95 +1708,100 @@ module GetStructures
 ! call HistogramsByFile(NMR_SiSi_unit,NMR_SiSi_filename,label,Descriptor(8))
 
   ! intercept,123417  
-  LEnergyF2 = Quartz + 123417.46568651011          &
-   -0.0036864750246390454*FD                       &
-+1029.5592168193764*D(1)%min_                      & 
-+1702.6902918426592*D(1)%k1                        &
--1120.1586328033761*D(1)%max_                      &
- -635.0541156870719*D(1)%min_*D(1)%min_            &
- -756.5822655800399*D(1)%k1*D(1)%k1                &
- +702.3688020627935*D(1)%max_*D(1)%max_            &
-!TOdistmin3,130.434
-!TOdistave3,101.348
-!TOdistmax3,-146.657
- +130.4342061737043*D(1)%min_*D(1)%min_*D(1)%min_  &
- +101.34822005897342*D(1)%k1*D(1)%k1*D(1)%k1       &
- -146.65656460992264*D(1)%max_*D(1)%max_*D(1)%max_ &
-! TT-dist
--32.790439918157574*D(2)%min_                     &
-+2182.7905757288304*D(2)%k1                       &
--435.42996598669396*D(2)%max_                     &
-!13.251348261101228,TTdistmin2
-+13.251348261101228*D(2)%min_*D(2)%min_           &
-!-747.1859062682986,TTdistave2
--747.1859062682986*D(2)%k1*D(2)%k1                &
-!136.93597927391716,TTdistmax2
-+136.93597927391716*D(2)%max_*D(2)%max_           &
-!-1.7381779395926293,TTdistmin3
--1.7381779395926293*D(2)%min_*D(2)%min_*D(2)%min_ &
-!85.37404292812043,TTdistave3
-+85.37404292812043*D(2)%k1*D(2)%k1*D(2)%k1        &
-!-14.356655090642692,TTdistmax3
--14.356655090642692*D(2)%max_*D(2)%max_*D(2)%max_ &
-! label="Histo: O-Si-O   "       3 ! OTO
-!0.6938623950823073,OTOanglemin
-+0.6938623950823073*D(3)%min_                     &
-!-1360.7999035194953,OTOangleave
--1360.7999035194953*D(3)%k1                       &
-!-0.028713701595067222,OTOanglemax
--0.028713701595067222*D(3)%max_                   &
-!-0.006854612384858187,OTOanglemin2
--0.006854612384858187*D(3)%min_*D(3)%min_         &
-!-6.983371818005454,OTOangleave2
--6.983371818005454*D(3)%k1*D(3)%k1                &
-!0.00017145730305762668,OTOanglemax2
-+0.00017145730305762668*D(3)%max_*D(3)%max_       &
-!2.2607476176236983e-05,OTOanglemin3
-+2.2607476176236983e-05*D(3)%min_*D(3)%min_*D(3)%min_ &
-!0.0803800990229028,OTOangleave3
-+0.0803800990229028*D(3)%k1*D(3)%k1*D(3)%k1       &
-!-2.4922686145747996e-07,OTOanglemax3
--2.4922686145747996e-07*D(3)%max_*D(3)%max_*D(3)%max_ &
-! label="Histo: Si-O-Si  "       4 ! TOT
-!-0.1667417333540271,TOTanglemin
--0.1667417333540271*D(4)%min_                     &
-!-0.5162675922741438,TOTangleave
--0.5162675922741438*D(4)%k1                       &
-!0.0573382505717761,TOTanglemax
-+0.0573382505717761*D(4)%max_                     &
-!0.0011070694059599911,TOTanglemin2
-+0.0011070694059599911*D(4)%min_*D(4)%min_        &
-!0.003969687863809857,TOTangleave2
-+0.003969687863809857*D(4)%k1*D(4)%k1             &
-!-0.00031545818431148335,TOTanglemax2
--0.00031545818431148335*D(4)%max_*D(4)%max_       &
-!-2.4005112713720855e-06,TOTanglemin3
--2.4005112713720855e-06*D(4)%min_*D(4)%min_*D(4)%min_&
-!-9.860108935666467e-06,TOTangleave3
--9.860108935666467e-06*D(4)%k1*D(4)%k1*D(4)%k1    &
-!5.701681923819812e-07,TOTanglemax3
-+5.701681923819812e-07*D(4)%max_*D(4)%max_*D(4)%max_ &
-! label="Histo: Si-Si-Si "       5 ! TTT
-!-0.009431635166714736,TTTanglemin
--0.009431635166714736*D(5)%min_                   &
-!27.487383531158994,TTTangleave
-+27.487383531158994*D(5)%k1                       &
-!0.0025814580651243708,TTTanglemax
-+0.0025814580651243708*D(5)%max_                  &
-!6.116129517244747e-05,TTTanglemin2
-+6.116129517244747e-05*D(5)%min_*D(5)%min_        &
-!-0.2548167171958089,TTTangleave2
--0.2548167171958089*D(5)%k1*D(5)%k1               &
-!-7.985920123969544e-06,TTTanglemax2
--7.985920123969544e-06*D(5)%max_*D(5)%max_        &
-!0.018357084285149275,TTTanglemin3
-+0.018357084285149275*D(5)%min_*D(5)%min_*D(5)%min_&
-!-0.00878480248119494,TTTangleave3
--0.00878480248119494*D(5)%k1*D(5)%k1*D(5)%k1      &
-!-0.008784913117360058,TTTanglemax3
--0.008784913117360058*D(5)%max_*D(5)%max_*D(5)%max_ &
-!-0.1948055201798231,Q
--0.1948055201798231*D(7)%k1
+  LEnergyF2 = Quartz + 123417                      &
+-0.00368647*FD                                     &
+!TOdistmin,1029.56
+!TOdistave,1702.69
+!TOdistmax,-1120.16
++1029.56*D(1)%min_                                 & 
++1702.69*D(1)%k1                                   &
+-1120.16*D(1)%max_                                 &
+!TOdistmin2,-635.054                               
+!TOdistave2,-756.582                               
+!TOdistmax2,702.369                                
+-635.054*D(1)%min_*D(1)%min_                       &
+-756.582*D(1)%k1*D(1)%k1                           &
++702.369*D(1)%max_*D(1)%max_                       &
+!TOdistmin3,130.434                                
+!TOdistave3,101.348                                
+!TOdistmax3,-146.657                               
++130.434*D(1)%min_*D(1)%min_*D(1)%min_             &
++101.348*D(1)%k1*D(1)%k1*D(1)%k1                   &
+-146.657*D(1)%max_*D(1)%max_*D(1)%max_             &
+!TTdistmin,-32.7904                                
+!TTdistave,2182.79                                 
+!TTdistmax,-435.43                                 
+-32.7904*D(2)%min_                                 &
++2182.79*D(2)%k1                                   &
+-435.43*D(2)%max_                                  &
+!TTdistmin2,13.2513                                
+!TTdistave2,-747.186                               
+!TTdistmax2,136.936                                
++13.2513*D(2)%min_*D(2)%min_                       &
+-747.186*D(2)%k1*D(2)%k1                           &
++136.936*D(2)%max_*D(2)%max_                       &
+!TTdistmin3,-1.73818                               
+!TTdistave3,85.374                                 
+!TTdistmax3,-14.3567                               
+-1.73818*D(2)%min_*D(2)%min_*D(2)%min_             &
++85.374*D(2)%k1*D(2)%k1*D(2)%k1                    &
+-14.3567*D(2)%max_*D(2)%max_*D(2)%max_             &
+!OTOanglemin,0.693862                              
+!OTOangleave,-1360.8                               
+!OTOanglemax,-0.0287123                            
++0.693862*D(3)%min_                                &
+-1360.8*D(3)%k1                                    &
+-0.028713*D(3)%max_                                &
+!OTOanglemin2,-0.00685461                          
+!OTOangleave2,-6.98337                             
+!OTOanglemax2,0.000171448                          
+-0.00685461*D(3)%min_*D(3)%min_                    &
+-6.98337*D(3)%k1*D(3)%k1                           &
++0.000171448*D(3)%max_*D(3)%max_                   &
+!OTOanglemin3,2.26075e-05
+!OTOangleave3,0.0803801
+!OTOanglemax3,-2.49209e-07
++2.26075e-05*D(3)%min_*D(3)%min_*D(3)%min_         &
++0.0803801*D(3)%k1*D(3)%k1*D(3)%k1                 &
+-2.49209e-07*D(3)%max_*D(3)%max_*D(3)%max_         &
+!TOTanglemin,-0.166742                             
+!TOTangleave,-0.51627                              
+!TOTanglemax,0.0573405                             
+-0.166742*D(4)%min_                                &
+-0.51627*D(4)%k1                                   &
++0.0573405*D(4)%max_                               &
+!TOTanglemin2,0.00110707                           
+!TOTangleave2,0.0039697                            
+!TOTanglemax2,-0.000315472                         
++0.00110707*D(4)%min_*D(4)%min_                    &
++0.0039697*D(4)%k1*D(4)%k1                         &
+-0.000315472*D(4)%max_*D(4)%max_                   &
+!TOTanglemin3,-2.40051e-06                         
+!TOTangleave3,-9.86015e-06                         
+!TOTanglemax3,5.70197e-07                          
+-2.40051e-06*D(4)%min_*D(4)%min_*D(4)%min_         &
+-9.86015e-06*D(4)%k1*D(4)%k1*D(4)%k1               &
+-9.86015e-06*D(4)%max_*D(4)%max_*D(4)%max_         &
+!TTTanglemin,-0.00943164                           
+!TTTangleave,27.4874                               
+!TTTanglemax,0.00258149                            
+-0.00943164*D(5)%min_                              &
++27.4874*D(5)%k1                                   &
++0.00258149*D(5)%max_                              &
+!TTTanglemin2,6.11614e-05
+!TTTangleave2,-0.254817
+!TTTanglemax2,-7.98604e-06
++6.11614e-05*D(5)%min_*D(5)%min_                   &
+-0.254817*D(5)%k1*D(5)%k1                          &
+-7.98604e-06*D(5)%max_*D(5)%max_                   &
+!TTTanglemin3,0.0137285
+!TTTangleave3,-0.00647057
+!TTTanglemax3,-0.00647054
++0.0137285*D(5)%min_*D(5)%min_*D(5)%min_           &
+-0.00647057*D(5)%k1*D(5)%k1*D(5)%k1                &
+-0.00647054*D(5)%max_*D(5)%max_*D(5)%max_          &
+!Q_ave
+-0.194794*D(7)%k1
   return
  end function LEnergyF2
 !
