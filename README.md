@@ -9,3 +9,7 @@ make
 
 to clean:<br>
 make clean
+
+Citation
+========
+SRG. Balestra, N. Rodríguez-Sánchez, D.Mena-Torres, AR. Ruiz-Salvador, Structural Features and Zeolite Stability: A Linearized Equation Approach, Cryst. Growth Des. , Feb., 2024, ![10.1021/acs.cgd.3c00893](https://zenodo.org/badge/DOI/10.1021/acs.cgd.3c00893.svg)
