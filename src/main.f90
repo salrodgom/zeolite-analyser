@@ -1,9 +1,13 @@
 ! ZEOLYSIS code:
 ! updated: Feb 5 2024
-! --------------
-! By Salvador R.G. Balestra, 2020,1) A. R. Ruiz-Salvador, 1), and Rocio Semino,2)
-!  1) Departamento de Sistemas Físicos, Químicos y Naturales, Universidad Pablo de Olavide, Seville, Spain
-!  2) Institute Charles Gerhardt Montpellier, Montpellier, France
+! first version: Dec 2020
+! ------------------------
+! By 
+!    Dr. Salvador R.G. Balestra:  Departamento de Sistemas Físicos, Químicos y Naturales, Universidad Pablo de Olavide, Seville, Spain
+!    Dr. A. R. Ruiz-Salvador:     idem
+!
+! We gratefully acknowledge several colleagues who have allowed the writing of the code:
+!    Dr. Rocio Semino:            Institute Charles Gerhardt Montpellier, Montpellier, France
 !
 ! This code calculates angle distributions in zeolitic structures
 ! The code analyses CIF files. The CIF File is provided by input a list file
@@ -919,19 +923,19 @@ module GetStructures
     end if
     !call output_extended_xyz(CIFFiles(i))
     call TopologicalAnalysis(CIFFiles(i), Descriptor)
+    FD     = (1000.0*CIFFiles(i)%n_atoms/3.0)/volume(CIFFiles(i)%rv)
     energy = CIFFiles(i)%energy/(CIFFiles(i)%n_atoms/3.0)
-    lene = LEnergy((1000.0*CIFFiles(i)%n_atoms/3.0)/volume(CIFFiles(i)%rv),Descriptor)
-    lene2 = LEnergyF2((1000.0*CIFFiles(i)%n_atoms/3.0)/volume(CIFFiles(i)%rv),Descriptor)
-    FD = (1000.0*CIFFiles(i)%n_atoms/3.0)/volume(CIFFiles(i)%rv)
+    lene   = LEnergy(FD,Descriptor)
+    lene2  = LEnergyF2(FD,Descriptor)
     !First function: from [0:3] eV
-    write(6,'(a,3(f20.10,1x,a))')'Energy [SLC]: ', &
-      energy-Quartz, ' [eV/T], Estimated [long]:', &
-      lene-Quartz, ' [eV/T], Absolute Error [long]:',&
-      abs(energy-lene),' [eV/T],'
+    write(6,'(a,3(f20.10,1x,a))')&
+      'Energy [SLC]: ', energy, &
+      ' [eV/T], Estimated [long]:', lene,&
+      ' [eV/T], Absolute Error [long]:', abs(energy-lene),' [eV/T],'
     !Second function: 
-    !write(6,'(a,2(f20.10,1x,a))')'                                      Estimated [short]:', &
-    !  lene2-Quartz, ' [eV/T], Absolute Error [short]:', &
-    !  abs(energy-lene2),' [eV/T]'
+    write(6,'(a,a,2(f20.10,1x,a))')'                                            ',&
+      'Estimated [short]:', lene2,&
+      ' [eV/T], Absolute Error [short]:', abs(energy-lene2),' [eV/T]'
     write(6,'(a,f20.10,1x,a)')'Density:', FD,'[A^3/1000T]'
     write(6,'(a,f20.10,1x,a)')'Energy density: ',1000.0*(energy-Quartz)/FD, '[eV/A^3]'
     write(6,'(30a,5a,30a)')("=",k=1,30),' End ',("=",k=1,30)
@@ -1708,7 +1712,7 @@ module GetStructures
 ! call HistogramsByFile(NMR_SiSi_unit,NMR_SiSi_filename,label,Descriptor(8))
 
   ! intercept,123417  
-  LEnergyF2 = Quartz + 123417                      &
+  LEnergyF2 = 123417                      &
 -0.00368647*FD                                     &
 !TOdistmin,1029.56
 !TOdistave,1702.69
