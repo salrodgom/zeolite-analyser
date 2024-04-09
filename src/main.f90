@@ -933,9 +933,9 @@ module GetStructures
       ' [eV/T], Estimated [long]:', lene,&
       ' [eV/T], Absolute Error [long]:', abs(energy-lene),' [eV/T],'
     !Second function: 
-    write(6,'(a,a,2(f20.10,1x,a))')'                                            ',&
-      'Estimated [short]:', lene2,&
-      ' [eV/T], Absolute Error [short]:', abs(energy-lene2),' [eV/T]'
+    !write(6,'(a,a,2(f20.10,1x,a))')'                                            ',&
+    !  'Estimated [short]:', lene2,&
+    !  ' [eV/T], Absolute Error [short]:', abs(energy-lene2),' [eV/T]'
     write(6,'(a,f20.10,1x,a)')'Density:', FD,'[A^3/1000T]'
     write(6,'(a,f20.10,1x,a)')'Energy density: ',1000.0*(energy-Quartz)/FD, '[eV/A^3]'
     write(6,'(30a,5a,30a)')("=",k=1,30),' End ',("=",k=1,30)
