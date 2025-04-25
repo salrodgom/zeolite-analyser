@@ -1093,15 +1093,15 @@ module GetStructures
   type(CollectiveVariable),intent(out) :: Descriptor(1:9)
   integer                  :: i, j, k, l, m, n, o, N_Q
   integer                  :: sio_unit, osio_unit, siosi_unit, ooo_unit, sisisi_unit, sisi_unit, q_unit,NMR_SiSi_unit
-  integer                  :: oo_unit
+  integer                  :: oo_unit, si_unit
   integer                  :: n_bends, ios, bends_unit, staggering_unit
   real                     :: DistanceMatrix(CIF%n_atoms,CIF%n_atoms)
   logical                  :: ConnectedAtoms(CIF%n_atoms,CIF%n_atoms)
   logical                  :: flag =.false.
   real                     :: r, r1(1:3), r2(1:3), r3(1:3), r4(1:3), angle, angle_tmp, theta, rho, dd, r_rho
-  real                     :: ave_TO, ave_TT, ave_TOT, dev_TO , dev_TOT, dev_TT
+  real                     :: ave_TO, ave_TT, ave_TOT, dev_TO , dev_TOT, dev_TT, skw_TO, skw_TT, skw_TOT
   character(len=20)        :: abc
-  character(len=100)       :: sio_file_name,  sisisi_file_name,NMR_SiSi_filename
+  character(len=100)       :: sio_file_name,  sisisi_file_name,NMR_SiSi_filename, si_filename
   character(len=100)       :: osio_file_name, siosi_file_name, ooo_file_name, oo_file_name
   real, parameter          :: r_min_criteria_connectivity = 0.15, degtorad = acos(-1.0)/180.0
   integer, parameter       :: n_bends_max = 10000000
@@ -1129,12 +1129,13 @@ module GetStructures
   bends_filename=CIF%filename(1:clen_trim(CIF%filename)-4)//"_Bonds.dat"
   sisi_filename=CIF%filename(1:clen_trim(CIF%filename)-4)//"_sisi.dat"
   q_filename=CIF%filename(1:clen_trim(CIF%filename)-4)//"_Q.dat"
+  si_filename=CIF%filename(1:clen_trim(CIF%filename)-4)//"_si.dat"
   staggering_filename=CIF%filename(1:clen_trim(CIF%filename)-4)//"_Staggering.dat"
   NMR_SiSi_filename=CIF%filename(1:clen_trim(CIF%filename)-4)//"_29SiNMR.dat"
 ! File units:
   osio_unit = 900 ; siosi_unit = 901 ; ooo_unit = 902        ; sisisi_unit = 903 ; NMR_SiSi_unit = 908
   q_unit    = 904 ; bends_unit = 905 ; staggering_unit = 906 ; sisi_unit   = 907 ; sio_unit = 777
-  oo_unit   = 909
+  oo_unit   = 909 ; si_unit    = 910
 ! 
   write(6,'(a)')'[DEV] Opening units [...]'
 !
@@ -1158,7 +1159,10 @@ module GetStructures
   if( ios /= 0 ) stop "Error opening file q_filename"
   open(unit=NMR_SiSi_unit, file=NMR_SiSi_filename, iostat=ios)
   if( ios /= 0 ) stop "Error opening file q_filename"
+  open(unit=Si_unit, file=Si_filename, iostat=ios)
+  if( ios /= 0 ) stop "Error opening file Si database"
 !
+  !write(NMR_SiSi_unit,'(a)')'# index, Fyfe, Dawson, Thomas'
   write(6,'(a)')'[DEV] Detecting natural bonds [...]'
 !
   write(6,'(a)')'Doing zeros in arrays [1]'
@@ -1501,22 +1505,33 @@ module GetStructures
     end do do_k_search_staggering
     ! Write NMR estimation from literature:
 !    theta  = CIF%atom(j)%Sum_SiOSi_angle/4.0           ! [deg.]
-    rho    = CIF%atom(j)%Sum_rho/4.0 
-    dd     = CIF%atom(j)%Sum_SiSi_d/4.0                ! [A]
-    r_rho  = CIF%atom(j)%Sum_SiOSi_dot_SiO_product/4.0
+    !rho    = CIF%atom(j)%Sum_rho/4.0 
+    !dd     = CIF%atom(j)%Sum_SiSi_d/4.0                ! [A]
+    !r_rho  = CIF%atom(j)%Sum_SiOSi_dot_SiO_product/4.0
 ! Averages per T-atom:
+    ! mean
     ave_TO  = sum( CIF%atom(j)%TO(1: CIF%atom(j)%n_TO ) )/ real( CIF%atom(j)%n_TO )
     ave_TOT = sum( CIF%atom(j)%TOT(1: CIF%atom(j)%n_TOT ) )/ real( CIF%atom(j)%n_TOT )
     ave_TT  = sum( CIF%atom(j)%TT(1: CIF%atom(j)%n_TT ) )/ real( CIF%atom(j)%n_TT )
+    ! standard deviation
     dev_TO  = sqrt(sum( ( CIF%atom(j)%TO(1: CIF%atom(j)%n_TO )-ave_TO)**2 )/ real( CIF%atom(j)%n_TO ))
     dev_TOT = sqrt(sum( ( CIF%atom(j)%TOT(1: CIF%atom(j)%n_TOT )-ave_TOT)**2) / real( CIF%atom(j)%n_TOT ))
     dev_TT  = sqrt(sum( ( CIF%atom(j)%TT(1: CIF%atom(j)%n_TT )-ave_TT)**2 )/ real( CIF%atom(j)%n_TT ))
+    ! skewness
+    skw_TO=(sum( ((CIF%atom(j)%TO(1: CIF%atom(j)%n_TO )-ave_TO)/dev_TO)**3)/real( CIF%atom(j)%n_TO))**(1.0/3.0)
+    skw_TT=(sum( ((CIF%atom(j)%TT(1: CIF%atom(j)%n_TT )-ave_TT)/dev_TT)**3)/real( CIF%atom(j)%n_TT))**(1.0/3.0)
+    skw_TOT=(sum( ((CIF%atom(j)%TOT(1: CIF%atom(j)%n_TOT)-ave_TOT)/dev_TOT)**3)/real( CIF%atom(j)%n_TOT))**(1.0/3.0)
 ! -------------------
 !    write(6,*)'[dev]', ave_TO, ave_TT, ave_TOT, dev_TO, dev_TOT, dev_TT, CIF%atom(j)%n_TO, CIF%atom(j)%n_TOT, CIF%atom(j)%n_TT
+! Formulas are take from:                                                                       ! Brouwer et al., Microporous and Mesoporous Materials, 297, 1 2020, 110000, 10.1016/j.micromeso.2020.110000
     write(NMR_SiSi_unit,*) j,  &
-     247.6 - 116.7*ave_TT,     &  ! Fyfe et al., Nature, 326, 281-283, 1987, 10.1038/326281a0
+     247.6 - 116.7*ave_TT,                                                                    & ! Fyfe et al., Nature, 326, 281-283, 1987, 10.1038/326281a0
       11.531*ave_TO + 27.280*dev_TO + 83.730*cos(ave_TOT*degtorad) + 0.20246*dev_TOT - 59.999,& ! Dawson et al (J. Phys. Chem. C 2017, 121, 15198−15210),
-     -25.44 - 0.5793*ave_TOT  ! Thomas et al., Chem. Phys. Lett., 102, 1983, 158-162, 10.1016/0009-2614(83)87384-9
+     -25.44 - 0.5793*ave_TOT                                                                    ! Thomas et al., Chem. Phys. Lett., 102, 1983, 158-162, 10.1016/0009-2614(83)87384-9
+    write(Si_unit,*) j, ave_TO, ave_TT, ave_TOT, &
+                        dev_TO, dev_TT, dev_TOT, &
+                        skw_TO, skw_TT, skw_TOT, &
+                        CIF%atom(j)%TO, CIF%atom(j)%TT, CIF%atom(j)%TOT
    end if
   end do do_j_search_staggering
   !
