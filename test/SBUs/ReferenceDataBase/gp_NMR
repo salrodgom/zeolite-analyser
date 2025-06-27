@@ -9,13 +9,13 @@ set key top right font 'Helvetica,16'
 f(A,s,ppm,x)=(A/(s*sqrt(2*acos(-1.0))))*exp(-0.5*((x-ppm)/s)**2)
 #set size ratio 1.2
 # Calculated:
-! awk '{print -508.7597+$5}' MFI_posit_00.00GPa.OUTCAR > calculated_1
+! awk '{print -508.7597+$5}' THO_posit_00.00GPa.OUTCAR > calculated_1
 # Calibrated experimental:
-! awk '{print $2}' MFI_posit_00.00GPa_29SiNMR.dat > calibrated_1
-! awk '{print $3}' MFI_posit_00.00GPa_29SiNMR.dat > calibrated_2
-sum_calculated_1(x) = `awk < calculated_1 '{v = v sprintf("f(%s,%s,%s,x)+",1.0,1.5,$1)} END{print v "0"}'`
-sum_calibrated_1(x) = `awk < calibrated_1 '{v = v sprintf("f(%s,%s,%s,x)+",1.0,1.5,$1)} END{print v "0"}'`
-sum_calibrated_2(x) = `awk < calibrated_2 '{v = v sprintf("f(%s,%s,%s,x)+",1.0,1.5,$1)} END{print v "0"}'`
+! awk '{print $2}' THO_posit_00.00GPa_29SiNMR.dat > calibrated_1
+! awk '{print $3}' THO_posit_00.00GPa_29SiNMR.dat > calibrated_2
+sum_calculated_1(x) = `awk < calculated_1 '{v = v sprintf("f(%s,%s,%s,x)+",1.0,1.0,$1)} END{print v "0"}'`
+sum_calibrated_1(x) = `awk < calibrated_1 '{v = v sprintf("f(%s,%s,%s,x)+",1.0,1.0,$1)} END{print v "0"}'`
+sum_calibrated_2(x) = `awk < calibrated_2 '{v = v sprintf("f(%s,%s,%s,x)+",1.0,1.0,$1)} END{print v "0"}'`
 unset  ytics
 unset y2tics
 set key top left
@@ -23,4 +23,5 @@ set key top left
 set y2range [0:]
 set samples 10000
 plot sum_calculated_1(x) w l lc rgb 'black' t 'VASP',\
-     sum_calibrated_2(x) w l lc rgb 'red' t 'Dawson'
+     sum_calibrated_1(x) w l lc rgb 'red' t 'Ours',\
+     sum_calibrated_2(x) w l lc rgb 'blue' t 'Dawson'

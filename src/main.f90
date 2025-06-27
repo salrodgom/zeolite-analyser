@@ -228,10 +228,8 @@ module types
   real              :: Sum_SiOSi_angle
   real              :: Sum_SiOSi_dot_SiO_product
   real              :: Sum_rho
-  integer           :: n_TO, n_TOT, n_TT
-  real              :: TT(1:4)
-  real              :: TO(1:4)
-  real              :: TOT(1:4)
+  integer           :: n_TO, n_TOT, n_TT, n_OTO, n_OO
+  real              :: TT(1:4), TO(1:4), TOT(1:4), OTO(1:4), OO(1:6)
   real              :: charge
   real              :: Q
   real              :: radius
@@ -1087,6 +1085,7 @@ module GetStructures
  end function add_angle
 !
  subroutine TopologicalAnalysis(CIF,Descriptor)
+  use histograms
   implicit none
   type(CIFfile),intent(inout) :: CIF
   type(vector)             :: v1, v2, v3, v4
@@ -1099,7 +1098,9 @@ module GetStructures
   logical                  :: ConnectedAtoms(CIF%n_atoms,CIF%n_atoms)
   logical                  :: flag =.false.
   real                     :: r, r1(1:3), r2(1:3), r3(1:3), r4(1:3), angle, angle_tmp, theta, rho, dd, r_rho
-  real                     :: ave_TO, ave_TT, ave_TOT, dev_TO , dev_TOT, dev_TT, skw_TO, skw_TT, skw_TOT
+  real                     :: ave_TO,ave_TT,ave_TOT,dev_TO ,dev_TOT,dev_TT,skw_TO,skw_TT,skw_TOT,kur_TO,kur_TT,kur_TOT
+  real                     :: var_TO,var_TT,var_TOT,sdev_TO,sdev_TT,sdev_TOT,ave_OO,dev_OO,skw_OO,kur_OO,var_OO,sdev_OO
+  real                     :: ave_OTO,dev_OTO,skw_OTO,kur_OTO,var_OTO,sdev_OTO
   character(len=20)        :: abc
   character(len=100)       :: sio_file_name,  sisisi_file_name,NMR_SiSi_filename, si_filename
   character(len=100)       :: osio_file_name, siosi_file_name, ooo_file_name, oo_file_name
@@ -1161,6 +1162,11 @@ module GetStructures
   if( ios /= 0 ) stop "Error opening file q_filename"
   open(unit=Si_unit, file=Si_filename, iostat=ios)
   if( ios /= 0 ) stop "Error opening file Si database"
+  write(Si_unit,'(a,a,a,a)')"#j, ave_TO, ave_TT, ave_TOT, ave_OTO, ave_OO,",&
+                                "dev_TO, dev_TT, dev_TOT, dev_OTO, dev_OO,",&
+                                "skw_TO, skw_TT, skw_TOT, skw_OTO, skw_OO,",&
+                                "kur_TO, kur_TT, kur_TOT, kur_OTO, kur_OO"
+
 !
   !write(NMR_SiSi_unit,'(a)')'# index, Fyfe, Dawson, Thomas'
   write(6,'(a)')'[DEV] Detecting natural bonds [...]'
@@ -1171,7 +1177,7 @@ module GetStructures
   CIF%atom(:)%degree = 0.0
   CIF%atom(:)%Sum_SiOSi_angle = 0.0; CIF%atom(:)%Sum_rho=0.0
   CIF%atom(:)%Sum_SiSi_d= 0.0; CIF%atom(:)%Sum_SiOSi_dot_SiO_product=0.0
-  CIF%atom(:)%n_TO = 0; CIF%atom(:)%n_TOT = 0; CIF%atom(:)%n_TT = 0
+  CIF%atom(:)%n_TO = 0; CIF%atom(:)%n_TOT = 0; CIF%atom(:)%n_TT = 0; CIF%atom(:)%n_OTO = 0; CIF%atom(:)%n_OO = 0
   do_i_bond: do i = 1, CIF%n_atoms
    do_j_bond: do j = i + 1, CIF%n_atoms
     call make_distances(.false.,vector2array(CIF%atom(j)%uCoordinate), &
@@ -1197,6 +1203,9 @@ module GetStructures
   write(abc,'("(",i0,"(i2,1x))")') CIF%n_atoms
   write(6,trim(abc)) (CIF%atom(i)%degree, i=1,CIF%n_atoms)
 !
+ CIF%atom%n_OTO = 0
+ CIF%atom%n_OO = 0
+!
   write(6,'(a)')'Searching for O-(Si)-O-(Si)-O angles:'
   do_i_search_OOO: do i = 1, CIF%n_atoms                                    ! O,  i
    if(CIF%atom(i)%element == 8) then
@@ -1205,7 +1214,7 @@ module GetStructures
       write(sio_unit,*) DistanceMatrix(i,j)
       do_k_search_OOO: do k=1,CIF%n_atoms                                   ! O,  k
        if(CIF%atom(k)%element == 8.and.ConnectedAtoms(j,k).and.k/=i) then
-        write(oo_unit,*) DistanceMatrix(i,k)
+        !write(oo_unit,*) DistanceMatrix(i,k)
 !       O - Si - O angle: i,j,k
         if (.not.visited_angle(check_visited,i,j,k,n_bends,bends(0:n_bends-1)(1:21))) then
          call ThreeCoordinatesInSameSpace( CIF%rv,&
@@ -1219,10 +1228,18 @@ module GetStructures
          v3 = Array2Vector(Crystal2BoxCoordinates(CIF%rv,r3))
 !
          angle = angle3vectors_jik(v2,v1,v3)/degtorad
+! OTO
+         CIF%atom(j)%n_OTO = CIF%atom(j)%n_OTO + 1
+         CIF%atom(j)%OTO ( CIF%atom(j)%n_OTO ) = angle
+! OO
+         CIF%atom(j)%n_OO = CIF%atom(j)%n_OO + 1
+         CIF%atom(j)%OO ( CIF%atom(j)%n_OO ) = DistanceMatrix(i,k)
+!
          n_bends = n_bends + 1
          write(bends(n_bends),'(3i7,1x,f14.7,1x,i4,1x,3(a2,1x))') i,j,k,angle,n_bends,&
           CIF%atom(i)%label_element,CIF%atom(j)%label_element,CIF%atom(k)%label_element
          write(osio_unit,*) angle
+         write(oo_unit,*)   DistanceMatrix(i,k)
         end if
 !
         do_l_search_OOO: do l=1,CIF%n_atoms                                     ! Si, l
@@ -1332,6 +1349,7 @@ module GetStructures
         v2=Array2Vector(Crystal2BoxCoordinates(CIF%rv,r2))
         v3=Array2Vector(Crystal2BoxCoordinates(CIF%rv,r3))
         angle = angle3vectors_jik(v2,v1,v3)/degtorad
+!
         CIF%atom(j)%n_TOT = CIF%atom(j)%n_TOT + 1
         CIF%atom(j)%TOT ( CIF%atom(j)%n_TOT ) = angle
 
@@ -1504,34 +1522,25 @@ module GetStructures
     end if
     end do do_k_search_staggering
     ! Write NMR estimation from literature:
-!    theta  = CIF%atom(j)%Sum_SiOSi_angle/4.0           ! [deg.]
-    !rho    = CIF%atom(j)%Sum_rho/4.0 
-    !dd     = CIF%atom(j)%Sum_SiSi_d/4.0                ! [A]
-    !r_rho  = CIF%atom(j)%Sum_SiOSi_dot_SiO_product/4.0
-! Averages per T-atom:
-    ! mean
-    ave_TO  = sum( CIF%atom(j)%TO(1: CIF%atom(j)%n_TO ) )/ real( CIF%atom(j)%n_TO )
-    ave_TOT = sum( CIF%atom(j)%TOT(1: CIF%atom(j)%n_TOT ) )/ real( CIF%atom(j)%n_TOT )
-    ave_TT  = sum( CIF%atom(j)%TT(1: CIF%atom(j)%n_TT ) )/ real( CIF%atom(j)%n_TT )
-    ! standard deviation
-    dev_TO  = sqrt(sum( ( CIF%atom(j)%TO(1: CIF%atom(j)%n_TO )-ave_TO)**2 )/ real( CIF%atom(j)%n_TO ))
-    dev_TOT = sqrt(sum( ( CIF%atom(j)%TOT(1: CIF%atom(j)%n_TOT )-ave_TOT)**2) / real( CIF%atom(j)%n_TOT ))
-    dev_TT  = sqrt(sum( ( CIF%atom(j)%TT(1: CIF%atom(j)%n_TT )-ave_TT)**2 )/ real( CIF%atom(j)%n_TT ))
-    ! skewness
-    skw_TO=(sum( ((CIF%atom(j)%TO(1: CIF%atom(j)%n_TO )-ave_TO)/dev_TO)**3)/real( CIF%atom(j)%n_TO))**(1.0/3.0)
-    skw_TT=(sum( ((CIF%atom(j)%TT(1: CIF%atom(j)%n_TT )-ave_TT)/dev_TT)**3)/real( CIF%atom(j)%n_TT))**(1.0/3.0)
-    skw_TOT=(sum( ((CIF%atom(j)%TOT(1: CIF%atom(j)%n_TOT)-ave_TOT)/dev_TOT)**3)/real( CIF%atom(j)%n_TOT))**(1.0/3.0)
+    call moment(CIF%atom(j)%TO(1: CIF%atom(j)%n_TO),CIF%atom(j)%n_TO   ,ave_TO,dev_TO,sdev_TO,var_TO,skw_TO,kur_TO)
+    call moment(CIF%atom(j)%TT(1: CIF%atom(j)%n_TT),CIF%atom(j)%n_TT   ,ave_TT,dev_TT,sdev_TT,var_TT,skw_TT,kur_TT)
+    call moment(CIF%atom(j)%TOT(1: CIF%atom(j)%n_TOT),CIF%atom(j)%n_TOT,ave_TOT,dev_TOT,sdev_TOT,var_TOT,skw_TOT,kur_TOT)
+    call moment(CIF%atom(j)%OTO(1: CIF%atom(j)%n_OTO),CIF%atom(j)%n_OTO,ave_OTO,dev_OTO,sdev_OTO,var_OTO,skw_OTO,kur_OTO)
+    call moment(CIF%atom(j)%OO(1: CIF%atom(j)%n_OO),CIF%atom(j)%n_OO   ,ave_OO,dev_OO,sdev_OO,var_OO,skw_OO,kur_OO)
 ! -------------------
-!    write(6,*)'[dev]', ave_TO, ave_TT, ave_TOT, dev_TO, dev_TOT, dev_TT, CIF%atom(j)%n_TO, CIF%atom(j)%n_TOT, CIF%atom(j)%n_TT
-! Formulas are take from:                                                                       ! Brouwer et al., Microporous and Mesoporous Materials, 297, 1 2020, 110000, 10.1016/j.micromeso.2020.110000
+    write(6,*)'[dev]', CIF%atom(j)%OO
+! Formulas are take from:                                                 Brouwer et al., Microporous and Mesoporous Materials, 297, 1 2020, 110000, 10.1016/j.micromeso.2020.110000
     write(NMR_SiSi_unit,*) j,  &
+      131.79-0.647105*ave_TOT-47.0504*ave_TT, &                                                 ! Ours
      247.6 - 116.7*ave_TT,                                                                    & ! Fyfe et al., Nature, 326, 281-283, 1987, 10.1038/326281a0
       11.531*ave_TO + 27.280*dev_TO + 83.730*cos(ave_TOT*degtorad) + 0.20246*dev_TOT - 59.999,& ! Dawson et al (J. Phys. Chem. C 2017, 121, 15198−15210),
      -25.44 - 0.5793*ave_TOT                                                                    ! Thomas et al., Chem. Phys. Lett., 102, 1983, 158-162, 10.1016/0009-2614(83)87384-9
-    write(Si_unit,*) j, ave_TO, ave_TT, ave_TOT, &
-                        dev_TO, dev_TT, dev_TOT, &
-                        skw_TO, skw_TT, skw_TOT, &
-                        CIF%atom(j)%TO, CIF%atom(j)%TT, CIF%atom(j)%TOT
+
+    write(Si_unit,*) j, ave_TO, ave_TT, ave_TOT, ave_OTO, ave_OO,& 
+                        dev_TO, dev_TT, dev_TOT, dev_OTO, dev_OO,&
+                        skw_TO, skw_TT, skw_TOT, skw_OTO, skw_OO,&
+                        kur_TO, kur_TT, kur_TOT, kur_OTO, kur_OO
+                        !CIF%atom(j)%TO, CIF%atom(j)%TT, CIF%atom(j)%TOT
    end if
   end do do_j_search_staggering
   !
