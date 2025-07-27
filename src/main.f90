@@ -271,72 +271,132 @@ end module GeneralVariables
 module histograms
  implicit none
  contains
- subroutine histogram(data,n_datos,n_boxs,ave,adev,sdev,var,skew,curt,suma, max_,min_)
-   implicit none
-   INTEGER,intent(in) :: n_datos,n_boxs
-   REAL,   intent(in) :: data(1:n_datos)
-   REAL               :: bound(0:n_boxs), histo(0:n_boxs)
-   REAL,   intent(out):: ave,adev,sdev,var,skew,curt,suma, max_,min_
-   INTEGER            :: i
-   suma = 0.0
-   max_ = maxval(data)
-   min_ = minval(data)
-   bound(0) = min_
-   do i = 1,n_boxs
-    bound(i) = bound(i-1) - (max_ - min_)/real(n_boxs)
-   end do
-   do i = 1,n_boxs
-    histo(i) = count( data <= bound(i) .and. data >= bound(i-1))
-   enddo
-   suma = SUM(histo)
-   histo(0:n_boxs) = histo(0:n_boxs) / suma
-   do i=1,n_boxs
-    histo(i)=histo(i)/ave
-   end do
-   call moment(data,n_datos,ave,adev,sdev,var,skew,curt)
-   return
- END SUBROUTINE histogram
+!subroutine histogram(data,n_datos,n_boxs,ave,adev,sdev,var,skew,curt,suma, max_,min_)
+!  implicit none
+!  INTEGER,intent(in) :: n_datos,n_boxs
+!  REAL,   intent(in) :: data(1:n_datos)
+!  REAL               :: bound(0:n_boxs), histo(n_boxs)
+!  REAL,   intent(out):: ave,adev,sdev,var,skew,curt,suma, max_,min_
+!  INTEGER            :: i
+!  suma = 0.0
+!  max_ = maxval(data)
+!  min_ = minval(data)
+!  bound(0) = min_
+!  do i = 1,n_boxs
+!   bound(i) = bound(i-1) + (max_ - min_)/real(n_boxs)
+!  end do
+!  do i=1,n_boxs
+!   histo(i) = count(data >= bound(i-1) .and. data < bound(i))
+!  end do
+!  suma = sum(histo)
+!  if (suma > 0.0) then
+!   histo = histo / suma
+!  else
+!   histo = 0.0
+!  end if
+!  call moment(data,n_datos,ave,adev,sdev,var,skew,curt)
+!  return
+!END SUBROUTINE histogram
 ! 
- SUBROUTINE moment(data,n,ave,adev,sdev,var,skew,curt)
-  IMPLICIT NONE
+!SUBROUTINE moment(data,n,ave,adev,sdev,var,skew,curt)
+! IMPLICIT NONE
 ! Numerical Recipes (Fortran 90), pp 607-608.
 ! Given an array of data(1:n), its returns its mean ave, average deviation adev,
 ! standar deviation sdev, variance var, skewness skew, and kurtosis curt.
-  INTEGER :: n,j
-  REAL    :: adev,ave,curt,sdev,skew,var,data(n)
-  REAL    :: p,ep
-  REAL    :: s = 0.0
-  IF (n<=1) PRINT*,'n must be at least 2 in moment'
-  !DO j=1,n
-  ! s=s+data(j)
-  !END DO
-  ave  = sum(data(1:n))/real(n)
-  adev = sum(abs(data(1:n)-ave))/real(n)
-  var  = 0.0
-  skew = 0.0
-  curt = 0.0
-  ep   = 0.0
-  storage: DO j=1,n
-   s    = data(j) - ave
-   ep   = ep + s
-   p    = s*s
-   var  = var + p
-   p    = p*s
-   skew = skew + p
-   p    = p*s
-   curt = curt + p
-  END DO storage
-  var  = (var-ep*ep/real(n))/(n-1)
+! INTEGER :: n,j
+! REAL    :: adev,ave,curt,sdev,skew,var,data(n)
+! REAL    :: p,ep
+! REAL    :: s = 0.0
+! IF (n<=1) PRINT*,'n must be at least 2 in moment'
+! !DO j=1,n
+! ! s=s+data(j)
+! !END DO
+! ave  = sum(data(1:n))/real(n)
+! adev = sum(abs(data(1:n)-ave))/real(n)
+! var  = 0.0
+! skew = 0.0
+! curt = 0.0
+! ep   = 0.0
+! storage: DO j=1,n
+!  s    = data(j) - ave
+!  ep   = ep + s
+!  p    = s*s
+!  var  = var + p
+!  p    = p*s
+!  skew = skew + p
+!  p    = p*s
+!  curt = curt + p
+! END DO storage
+! var  = (var-ep*ep/real(n))/(n-1)
+! sdev = sqrt(var)
+! IF(var/=0.0)THEN
+!  skew = skew/(n*sdev**3)
+!  curt = curt/(n*var*var)-3.0
+!  curt = curt/(n*var*var)-3.0
+! ELSE
+!  skew=0.0
+!  curt=0.0
+! end if
+! RETURN
+!END SUBROUTINE
+ subroutine histogram(data,n_datos,n_boxs,ave,adev,sdev,var,skew,curt,suma,max_,min_)
+  implicit none
+  integer,intent(in) :: n_datos,n_boxs
+  real,intent(in)    :: data(1:n_datos)
+  real,intent(out)   :: ave,adev,sdev,var,skew,curt,suma,max_,min_
+  real :: bound(0:n_boxs)
+  real :: histo(1:n_boxs)
+  integer :: i
+  ! Cálculo de límites
+  max_ = maxval(data)
+  min_ = minval(data)
+  bound(0) = min_
+  do i=1,n_boxs
+    bound(i) = bound(i-1) + (max_ - min_) / real(n_boxs)
+  end do
+  ! Frecuencias por intervalo
+  do i=1,n_boxs
+    histo(i) = count(data >= bound(i-1) .and. data < bound(i))
+  end do
+  ! Normalizar histograma
+  suma = sum(histo)
+  if (suma > 0.0) histo = histo / suma
+  ! Cálculo de momentos
+  call moment(data,n_datos,ave,adev,sdev,var,skew,curt)
+ end subroutine histogram
+
+ subroutine moment(data,n,ave,adev,sdev,var,skew,curt)
+  implicit none
+  integer :: n,j
+  real :: data(n),ave,adev,sdev,var,skew,curt
+  real :: p,ep,s
+
+  ave  = sum(data)/real(n)
+  adev = sum(abs(data - ave))/real(n)
+  var  = 0.0 ; skew = 0.0 ; curt = 0.0 ; ep = 0.0
+
+  do j=1,n
+    s   = data(j) - ave
+    ep  = ep + s
+    p   = s*s
+    var = var + p
+    p   = p*s
+    skew= skew + p
+    p   = p*s
+    curt= curt + p
+  end do
+
+  var  = (var - ep*ep/real(n)) / (n - 1)
   sdev = sqrt(var)
-  IF(var/=0.0)THEN
-   skew = skew/(n*adev**3)
-   curt = curt/(n*var*var)-3.0
-  ELSE
-   skew=0.0
-   curt=0.0
+
+  if (var /= 0.0) then
+    skew = skew / (n * sdev**3)
+    curt = curt / (n * var**2) - 3.0
+  else
+    skew = 0.0
+    curt = 0.0
   end if
-  RETURN
- END SUBROUTINE
+ end subroutine moment
 end module histograms 
 !
 module GeometricProperties
@@ -622,6 +682,7 @@ end function
   character(len=2)                :: zlz
   character(len=4)                :: extension=".gin"
   character(len=500)              :: command
+  integer                         :: potential=1 ! 1: Catlow, 2: Germanate
 !
   gulpfilename=ciffiles%filename(1:clen_trim(ciffiles%filename)-4)//extension
   gulpfilenameout=adjustl(ciffiles%filename(1:clen_trim(ciffiles%filename)-4)//".gout")
@@ -634,7 +695,7 @@ end function
   else
    if(opti_flag) then
     write(6,'(a)') 'Optimising structure:'
-    write(u,'(a)') 'opti conp nosymm'
+    write(u,'(a)') 'opti conp nosymm proper'
    end if
   end if
   write(u,'(a,5x,a)')'name',ciffiles%filename(1:clen_trim(ciffiles%filename)-4)
@@ -657,13 +718,26 @@ end function
     ciffiles%atom(i)%charge
   end do
   write(u,'(a)')'space'
-  write(u,'(a)')' 1'
+  write(u,'(a)')'P 1'
   write(u,'(a)')'supercell 1 1 1'
-  write(u,'(a)')'species'
-  write(u,'(a)')'O  core  O  core'
-  write(u,'(a)')'O  shel  O  shel'
-  write(u,'(a)')'Si core  Si core'
-  write(u,'(a)')'library catlow nodump'
+  if(potential==1)then
+   write(u,'(a)')'species'
+   write(u,'(a)')'O  core  O  core'
+   write(u,'(a)')'O  shel  O  shel'
+   write(u,'(a)')'Si core  Si core'
+   write(u,'(a)')'library catlow nodump'
+  else
+   write(u,'(a)')'species'
+   write(u,'(a)')'O1  core  O1  core' ! Ge-O-Ge
+   write(u,'(a)')'O1  shel  O1  shel'
+   write(u,'(a)')'O2  core  O2  core' ! Si-O-Si
+   write(u,'(a)')'O2  shel  O2  shel'
+   write(u,'(a)')'O3  core  O3  core' ! Ge-O-Si
+   write(u,'(a)')'O3  shel  O3  shel'
+   write(u,'(a)')'Ge core  Ge core'
+   write(u,'(a)')'Si core  Si core'
+   write(u,'(a)')'library Germanate nodump'
+  end if
   if(opti_flag)then
    write(u,'(a)')'output cif '//ciffiles%filename(1:clen_trim(ciffiles%filename)-4)//'_opt'
   end if
@@ -1162,10 +1236,10 @@ module GetStructures
   if( ios /= 0 ) stop "Error opening file q_filename"
   open(unit=Si_unit, file=Si_filename, iostat=ios)
   if( ios /= 0 ) stop "Error opening file Si database"
-  write(Si_unit,'(a,a,a,a)')"#j, ave_TO, ave_TT, ave_TOT, ave_OTO, ave_OO,",&
-                                "dev_TO, dev_TT, dev_TOT, dev_OTO, dev_OO,",&
-                                "skw_TO, skw_TT, skw_TOT, skw_OTO, skw_OO,",&
-                                "kur_TO, kur_TT, kur_TOT, kur_OTO, kur_OO"
+  write(Si_unit,'(a,a,a,a)')"#j, Q, ave_TO, ave_TT, ave_OO, ave_TOT, ave_OTO,",&
+                                   "dev_TO, dev_TT, dev_OO, dev_TOT, dev_OTO,",&
+                                   "skw_TO, skw_TT, skw_OO, skw_TOT, skw_OTO,",&
+                                   "kur_TO, kur_TT, kur_OO, kur_TOT, kur_OTO"
 
 !
   !write(NMR_SiSi_unit,'(a)')'# index, Fyfe, Dawson, Thomas'
@@ -1393,7 +1467,7 @@ module GetStructures
           Vector2Array(CIF%atom(j)%uCoordinate),&
           Vector2Array(CIF%atom(k)%uCoordinate),&
           Vector2Array(CIF%atom(m)%uCoordinate),&
-          r1,r2,r3,r4 )
+          r1,r2,r3,r4)
 !
           v1=Array2Vector(Crystal2BoxCoordinates(CIF%rv,r1))   ! i 
           v2=Array2Vector(Crystal2BoxCoordinates(CIF%rv,r2))   ! j
@@ -1414,12 +1488,11 @@ module GetStructures
     end do do_j_search_q
     write(q_unit,*) q_l
     CIF%atom(i)%Q = q_l
-    !Q= Q + q_l
+    !Q = Q + q_l
    end if
   end do do_i_search_q
 ! 
   visited_staggering(1:CIF%n_atoms,1:CIF%n_atoms) = .false.
-
 !
   do_j_search_staggering: do j = 1, CIF%n_atoms                            ! Si, j
    if(CIF%atom(j)%element == 14) then
@@ -1528,7 +1601,7 @@ module GetStructures
     call moment(CIF%atom(j)%OTO(1: CIF%atom(j)%n_OTO),CIF%atom(j)%n_OTO,ave_OTO,dev_OTO,sdev_OTO,var_OTO,skw_OTO,kur_OTO)
     call moment(CIF%atom(j)%OO(1: CIF%atom(j)%n_OO),CIF%atom(j)%n_OO   ,ave_OO,dev_OO,sdev_OO,var_OO,skw_OO,kur_OO)
 ! -------------------
-    write(6,*)'[dev]', CIF%atom(j)%OO
+    !write(6,*)'[dev]', CIF%atom(j)%OO
 ! Formulas are take from:                                                 Brouwer et al., Microporous and Mesoporous Materials, 297, 1 2020, 110000, 10.1016/j.micromeso.2020.110000
     write(NMR_SiSi_unit,*) j,  &
       131.79-0.647105*ave_TOT-47.0504*ave_TT, &                                                 ! Ours
@@ -1536,11 +1609,10 @@ module GetStructures
       11.531*ave_TO + 27.280*dev_TO + 83.730*cos(ave_TOT*degtorad) + 0.20246*dev_TOT - 59.999,& ! Dawson et al (J. Phys. Chem. C 2017, 121, 15198−15210),
      -25.44 - 0.5793*ave_TOT                                                                    ! Thomas et al., Chem. Phys. Lett., 102, 1983, 158-162, 10.1016/0009-2614(83)87384-9
 
-    write(Si_unit,*) j, ave_TO, ave_TT, ave_TOT, ave_OTO, ave_OO,& 
-                        dev_TO, dev_TT, dev_TOT, dev_OTO, dev_OO,&
-                        skw_TO, skw_TT, skw_TOT, skw_OTO, skw_OO,&
-                        kur_TO, kur_TT, kur_TOT, kur_OTO, kur_OO
-                        !CIF%atom(j)%TO, CIF%atom(j)%TT, CIF%atom(j)%TOT
+    write(Si_unit,*) j,CIF%atom(j)%Q, ave_TO, ave_TT, ave_OO, ave_TOT, ave_OTO,& 
+                                      dev_TO, dev_TT, dev_OO, dev_TOT, dev_OTO,&
+                                      skw_TO, skw_TT, skw_OO, skw_TOT, skw_OTO,&
+                                      kur_TO, kur_TT, kur_OO, kur_TOT, kur_OTO
    end if
   end do do_j_search_staggering
   !
@@ -1628,7 +1700,7 @@ module GetStructures
   close(descriptor_unit)
   D%k1   = ave ; D%k2   = sdev ; D%k3   = skew ; D%k4   = curt
   D%min_ = min_ ; D%max_ = max_
-  write(6,'(a,1x,6(e20.10,1x))')label,ave,max_,min_,sdev,skew,curt
+  write(6,'(a,1x,6(f20.10,1x))')label,ave,max_,min_,sdev,skew,curt
   label(1:20)=" "
   return
  end subroutine
