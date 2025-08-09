@@ -13,7 +13,7 @@
 *  nosymmetry   - turn off symmetry after initial structure generation         *
 ********************************************************************************
 
-  Job Started  at 15:21.17 27th July       2025                               
+  Job Started  at 17:56.37 27th July       2025                               
 
   Number of CPUs =     1
 
@@ -380,26 +380,26 @@ Si    core    Harmonic      Three-body cnst  2.0972400    eV*rad^-2 0.000  1.900
 
   Cycle:      0 Energy:     -5031.491755  Gnorm:      9.024739  CPU:    0.277
   ** Hessian calculated **
-  Cycle:      1 Energy:     -5132.302235  Gnorm:      1.646805  CPU:    0.579
+  Cycle:      1 Energy:     -5132.302235  Gnorm:      1.646805  CPU:    0.578
   ** Hessian calculated **
-  Cycle:      2 Energy:     -5134.940439  Gnorm:      0.822293  CPU:    0.997
-  Cycle:      3 Energy:     -5135.598266  Gnorm:      0.410345  CPU:    1.200
-  Cycle:      4 Energy:     -5135.762351  Gnorm:      0.204985  CPU:    1.404
-  Cycle:      5 Energy:     -5135.803277  Gnorm:      0.102447  CPU:    1.608
-  Cycle:      6 Energy:     -5135.813503  Gnorm:      0.051213  CPU:    1.812
+  Cycle:      2 Energy:     -5134.940439  Gnorm:      0.822293  CPU:    0.992
+  Cycle:      3 Energy:     -5135.598266  Gnorm:      0.410345  CPU:    1.195
+  Cycle:      4 Energy:     -5135.762351  Gnorm:      0.204985  CPU:    1.399
+  Cycle:      5 Energy:     -5135.803277  Gnorm:      0.102447  CPU:    1.602
+  Cycle:      6 Energy:     -5135.813503  Gnorm:      0.051213  CPU:    1.805
   ** Hessian has required structure
   ** Hessian has required structure
-  Cycle:      7 Energy:     -5135.816058  Gnorm:      0.025605  CPU:    2.274
+  Cycle:      7 Energy:     -5135.816058  Gnorm:      0.025605  CPU:    2.268
   ** Hessian has required structure
-  Cycle:      8 Energy:     -5135.816697  Gnorm:      0.012802  CPU:    2.504
+  Cycle:      8 Energy:     -5135.816697  Gnorm:      0.012802  CPU:    2.497
   ** Hessian has required structure
-  Cycle:      9 Energy:     -5135.816857  Gnorm:      0.006401  CPU:    2.733
+  Cycle:      9 Energy:     -5135.816857  Gnorm:      0.006401  CPU:    2.726
   ** Hessian has required structure
-  Cycle:     10 Energy:     -5135.816896  Gnorm:      0.003200  CPU:    2.962
+  Cycle:     10 Energy:     -5135.816896  Gnorm:      0.003200  CPU:    2.955
   ** Hessian has required structure
-  Cycle:     11 Energy:     -5135.816910  Gnorm:      0.000000  CPU:    3.159
+  Cycle:     11 Energy:     -5135.816910  Gnorm:      0.000000  CPU:    3.151
   ** Hessian has required structure
-  Cycle:     12 Energy:     -5135.816910  Gnorm:      0.000000  CPU:    3.421
+  Cycle:     12 Energy:     -5135.816910  Gnorm:      0.000000  CPU:    3.413
   ** Hessian has required structure
 
 
@@ -842,7 +842,7 @@ Si    core    Harmonic      Three-body cnst  2.0972400    eV*rad^-2 0.000  1.900
 --------------------------------------------------------------------------------
 
 
-  Time to end of optimisation =       3.9693 seconds
+  Time to end of optimisation =       3.9608 seconds
 
 
   Peak dynamic memory used =       4.42 MB 
@@ -853,13 +853,13 @@ Si    core    Harmonic      Three-body cnst  2.0972400    eV*rad^-2 0.000  1.900
 --------------------------------------------------------------------------------
   Task / Subroutine                                          Time (Seconds)
 --------------------------------------------------------------------------------
-  Calculation of reciprocal space energy and derivatives          1.5117
-  Calculation of real space energy and derivatives                1.7100
-  Calculation of three-body energy and derivatives                0.5156
-  Calculation and manipulation of Hessian matrix                  0.2070
-  Calculation of matrix inversion                                 0.0059
+  Calculation of reciprocal space energy and derivatives          1.5049
+  Calculation of real space energy and derivatives                1.7120
+  Calculation of three-body energy and derivatives                0.5146
+  Calculation and manipulation of Hessian matrix                  0.2066
+  Calculation of matrix inversion                                 0.0053
 --------------------------------------------------------------------------------
-  Total CPU time                                                  3.9693
+  Total CPU time                                                  3.9608
 --------------------------------------------------------------------------------
 
 
@@ -867,5 +867,5 @@ Si    core    Harmonic      Three-body cnst  2.0972400    eV*rad^-2 0.000  1.900
   CIF file written as ReferenceDataBase/THO_posit_00.00GPa_opt.cif
 
 
-  Job Finished at 15:21.21 27th July       2025                               
+  Job Finished at 17:56.41 27th July       2025                               
 

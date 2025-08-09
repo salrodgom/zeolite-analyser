@@ -271,74 +271,7 @@ end module GeneralVariables
 module histograms
  implicit none
  contains
-!subroutine histogram(data,n_datos,n_boxs,ave,adev,sdev,var,skew,curt,suma, max_,min_)
-!  implicit none
-!  INTEGER,intent(in) :: n_datos,n_boxs
-!  REAL,   intent(in) :: data(1:n_datos)
-!  REAL               :: bound(0:n_boxs), histo(n_boxs)
-!  REAL,   intent(out):: ave,adev,sdev,var,skew,curt,suma, max_,min_
-!  INTEGER            :: i
-!  suma = 0.0
-!  max_ = maxval(data)
-!  min_ = minval(data)
-!  bound(0) = min_
-!  do i = 1,n_boxs
-!   bound(i) = bound(i-1) + (max_ - min_)/real(n_boxs)
-!  end do
-!  do i=1,n_boxs
-!   histo(i) = count(data >= bound(i-1) .and. data < bound(i))
-!  end do
-!  suma = sum(histo)
-!  if (suma > 0.0) then
-!   histo = histo / suma
-!  else
-!   histo = 0.0
-!  end if
-!  call moment(data,n_datos,ave,adev,sdev,var,skew,curt)
-!  return
-!END SUBROUTINE histogram
-! 
-!SUBROUTINE moment(data,n,ave,adev,sdev,var,skew,curt)
-! IMPLICIT NONE
-! Numerical Recipes (Fortran 90), pp 607-608.
-! Given an array of data(1:n), its returns its mean ave, average deviation adev,
-! standar deviation sdev, variance var, skewness skew, and kurtosis curt.
-! INTEGER :: n,j
-! REAL    :: adev,ave,curt,sdev,skew,var,data(n)
-! REAL    :: p,ep
-! REAL    :: s = 0.0
-! IF (n<=1) PRINT*,'n must be at least 2 in moment'
-! !DO j=1,n
-! ! s=s+data(j)
-! !END DO
-! ave  = sum(data(1:n))/real(n)
-! adev = sum(abs(data(1:n)-ave))/real(n)
-! var  = 0.0
-! skew = 0.0
-! curt = 0.0
-! ep   = 0.0
-! storage: DO j=1,n
-!  s    = data(j) - ave
-!  ep   = ep + s
-!  p    = s*s
-!  var  = var + p
-!  p    = p*s
-!  skew = skew + p
-!  p    = p*s
-!  curt = curt + p
-! END DO storage
-! var  = (var-ep*ep/real(n))/(n-1)
-! sdev = sqrt(var)
-! IF(var/=0.0)THEN
-!  skew = skew/(n*sdev**3)
-!  curt = curt/(n*var*var)-3.0
-!  curt = curt/(n*var*var)-3.0
-! ELSE
-!  skew=0.0
-!  curt=0.0
-! end if
-! RETURN
-!END SUBROUTINE
+!
  subroutine histogram(data,n_datos,n_boxs,ave,adev,sdev,var,skew,curt,suma,max_,min_)
   implicit none
   integer,intent(in) :: n_datos,n_boxs
@@ -364,7 +297,7 @@ module histograms
   ! Cálculo de momentos
   call moment(data,n_datos,ave,adev,sdev,var,skew,curt)
  end subroutine histogram
-
+!
  subroutine moment(data,n,ave,adev,sdev,var,skew,curt)
   implicit none
   integer :: n,j
@@ -374,7 +307,6 @@ module histograms
   ave  = sum(data)/real(n)
   adev = sum(abs(data - ave))/real(n)
   var  = 0.0 ; skew = 0.0 ; curt = 0.0 ; ep = 0.0
-
   do j=1,n
     s   = data(j) - ave
     ep  = ep + s
@@ -385,10 +317,8 @@ module histograms
     p   = p*s
     curt= curt + p
   end do
-
   var  = (var - ep*ep/real(n)) / (n - 1)
   sdev = sqrt(var)
-
   if (var /= 0.0) then
     skew = skew / (n * sdev**3)
     curt = curt / (n * var**2) - 3.0
@@ -583,13 +513,13 @@ module GeometricProperties
 subroutine make_distances(flag,r2,r1,rv,r3,dist)
  use vector_module, only: dist2vectors, array2vector
  implicit none
- real,    intent(in)  :: r1(3),r2(3),rv(3,3)    ! coordenadas y matriz de cambio
- real,    intent(out) :: dist,r3(1:3)                     ! matriz de distancias n x n
- real                 :: d_image(1:27),image(3,27)        ! array de distancias
- real                 :: distance,rcm(3),phi
- integer              :: k,l,m,n,o,i,j                    ! variables mudas
- real                 :: atom(3),ouratom(3)               ! coordenadas preparadas
- logical              :: flag                             ! out the coordinate of the atom
+ real,    intent(in)                        :: r1(3),r2(3),rv(3,3)              ! coordenadas y matriz de cambio
+ real,    intent(out)                       :: dist,r3(1:3)                     ! matriz de distancias n x n
+ real                                       :: d_image(1:27),image(3,27)        ! array de distancias
+ real                                       :: distance,rcm(3),phi
+ integer                                    :: k,l,m,n,o,i,j                    ! variables mudas
+ real                                       :: atom(3),ouratom(3)               ! coordenadas preparadas
+ logical                                    :: flag                             ! out the coordinate of the atom
 ! {{ calculamos la matriz de distancias }}
   k=0
   do l=-1,1
@@ -1175,12 +1105,13 @@ module GetStructures
   real                     :: ave_TO,ave_TT,ave_TOT,dev_TO ,dev_TOT,dev_TT,skw_TO,skw_TT,skw_TOT,kur_TO,kur_TT,kur_TOT
   real                     :: var_TO,var_TT,var_TOT,sdev_TO,sdev_TT,sdev_TOT,ave_OO,dev_OO,skw_OO,kur_OO,var_OO,sdev_OO
   real                     :: ave_OTO,dev_OTO,skw_OTO,kur_OTO,var_OTO,sdev_OTO
+  real                     :: data(1:6)
   character(len=20)        :: abc
   character(len=100)       :: sio_file_name,  sisisi_file_name,NMR_SiSi_filename, si_filename
   character(len=100)       :: osio_file_name, siosi_file_name, ooo_file_name, oo_file_name
   real, parameter          :: r_min_criteria_connectivity = 0.15, degtorad = acos(-1.0)/180.0
   integer, parameter       :: n_bends_max = 10000000
-  logical                  :: check_visited = .false.
+  logical                  :: check_visited = .true.
   character(len=100)       :: bends_filename, staggering_filename, sisi_filename, q_filename
   character(len=50)        :: bends(0:n_bends_max)
   integer                  :: n_staggering_angles, n_staggering_angles_2
@@ -1251,24 +1182,25 @@ module GetStructures
   CIF%atom(:)%degree = 0.0
   CIF%atom(:)%Sum_SiOSi_angle = 0.0; CIF%atom(:)%Sum_rho=0.0
   CIF%atom(:)%Sum_SiSi_d= 0.0; CIF%atom(:)%Sum_SiOSi_dot_SiO_product=0.0
-  CIF%atom(:)%n_TO = 0; CIF%atom(:)%n_TOT = 0; CIF%atom(:)%n_TT = 0; CIF%atom(:)%n_OTO = 0; CIF%atom(:)%n_OO = 0
+  CIF%atom(:)%n_TO = 0; CIF%atom(:)%n_TOT = 0; CIF%atom(:)%n_TT = 0
+  CIF%atom(:)%n_OTO = 0; CIF%atom(:)%n_OO = 0
   do_i_bond: do i = 1, CIF%n_atoms
    do_j_bond: do j = i + 1, CIF%n_atoms
+    ! i - j
     call make_distances(.false.,vector2array(CIF%atom(j)%uCoordinate), &
                         vector2array(CIF%atom(i)%uCoordinate),CIF%rv,r3,r)
+    DistanceMatrix(i,j) = r
+    DistanceMatrix(j,i) = DistanceMatrix(i,j)
+!
     if(r > 0.1 .and. r <= CIF%atom(i)%radius + CIF%atom(j)%radius + r_min_criteria_connectivity)then
      CIF%atom(i)%degree = CIF%atom(i)%degree + 1
      CIF%atom(j)%degree = CIF%atom(j)%degree + 1
-     DistanceMatrix(i,j) = r
-     DistanceMatrix(j,i) = DistanceMatrix(i,j)
      ConnectedAtoms(i,j) = .true.
      ConnectedAtoms(j,i) = .true.
     else
      if(r<5.and.CIF%atom(i)%element==8.and.CIF%atom(j)%element==16)then
       write(6,*) r, CIF%atom(i)%radius, CIF%atom(j)%radius, CIF%atom(i)%radius+CIF%atom(j)%radius + r_min_criteria_connectivity
      end if
-     DistanceMatrix(i,j) = r
-     DistanceMatrix(j,i) = DistanceMatrix(i,j)
     end if
    end do do_j_bond
   end do do_i_bond
@@ -1277,9 +1209,6 @@ module GetStructures
   write(abc,'("(",i0,"(i2,1x))")') CIF%n_atoms
   write(6,trim(abc)) (CIF%atom(i)%degree, i=1,CIF%n_atoms)
 !
- CIF%atom%n_OTO = 0
- CIF%atom%n_OO = 0
-!
   write(6,'(a)')'Searching for O-(Si)-O-(Si)-O angles:'
   do_i_search_OOO: do i = 1, CIF%n_atoms                                    ! O,  i
    if(CIF%atom(i)%element == 8) then
@@ -1287,33 +1216,43 @@ module GetStructures
      if(CIF%atom(j)%element == 14.and.ConnectedAtoms(i,j)) then
       write(sio_unit,*) DistanceMatrix(i,j)
       do_k_search_OOO: do k=1,CIF%n_atoms                                   ! O,  k
-       if(CIF%atom(k)%element == 8.and.ConnectedAtoms(j,k).and.k/=i) then
-        !write(oo_unit,*) DistanceMatrix(i,k)
-!       O - Si - O angle: i,j,k
+       if(CIF%atom(k)%element == 8.and.ConnectedAtoms(j,k).and.k/=i.and.j/=i.and.j/=k) then
+!        -------------------
+!        O - O distance: i,k
+!        -------------------
+         CIF%atom(j)%n_OO = CIF%atom(j)%n_OO + 1
+         CIF%atom(j)%OO ( CIF%atom(j)%n_OO ) = DistanceMatrix(i,k)
+         !if ( CIF%atom(j)%OO ( CIF%atom(j)%n_OO ) >= 5 ) STOP 'wrong OO distance'
+         write(oo_unit,*) CIF%atom(j)%OO ( CIF%atom(j)%n_OO )
         if (.not.visited_angle(check_visited,i,j,k,n_bends,bends(0:n_bends-1)(1:21))) then
+!
          call ThreeCoordinatesInSameSpace( CIF%rv,&
           Vector2Array(CIF%atom(i)%uCoordinate),&
           Vector2Array(CIF%atom(j)%uCoordinate),&
           Vector2Array(CIF%atom(k)%uCoordinate),&
           r1,r2,r3 )
-!
+! 
          v1 = Array2Vector(Crystal2BoxCoordinates(CIF%rv,r1))
          v2 = Array2Vector(Crystal2BoxCoordinates(CIF%rv,r2))
          v3 = Array2Vector(Crystal2BoxCoordinates(CIF%rv,r3))
 !
          angle = angle3vectors_jik(v2,v1,v3)/degtorad
-! OTO
+!        ----------------------
+!        O - T - O angle: i,j,k
+!        ----------------------
          CIF%atom(j)%n_OTO = CIF%atom(j)%n_OTO + 1
          CIF%atom(j)%OTO ( CIF%atom(j)%n_OTO ) = angle
-! OO
-         CIF%atom(j)%n_OO = CIF%atom(j)%n_OO + 1
-         CIF%atom(j)%OO ( CIF%atom(j)%n_OO ) = DistanceMatrix(i,k)
-!
          n_bends = n_bends + 1
-         write(bends(n_bends),'(3i7,1x,f14.7,1x,i4,1x,3(a2,1x))') i,j,k,angle,n_bends,&
-          CIF%atom(i)%label_element,CIF%atom(j)%label_element,CIF%atom(k)%label_element
-         write(osio_unit,*) angle
-         write(oo_unit,*)   DistanceMatrix(i,k)
+         write(bends(n_bends),'(3i7,1x,f14.7,1x,i4,1x,3(a2,1x))') &
+                              i,j,k,angle,n_bends,&
+                              CIF%atom(i)%label_element,CIF%atom(j)%label_element,&
+                              CIF%atom(k)%label_element
+!
+         write(osio_unit,*) CIF%atom(j)%OTO ( CIF%atom(j)%n_OTO )
+         !if(angle<100)then
+         ! write(6,*) j, CIF%atom(j)%n_OTO, angle, angle3vectors_jik(v2,v1,v3), DistanceMatrix(i,k), DistanceMatrix(i,j), DistanceMatrix(j,k)
+         ! STOP 'wrong atoms or something'
+         !end if
         end if
 !
         do_l_search_OOO: do l=1,CIF%n_atoms                                     ! Si, l
@@ -1389,9 +1328,9 @@ module GetStructures
   end do do_i_search_OOO
 ! Statistics per Si atom:
 ! -----------------------
-  CIF%atom%n_TO  = 0
-  CIF%atom%n_TT  = 0
-  CIF%atom%n_TOT = 0
+!  CIF%atom%n_TO  = 0
+!  CIF%atom%n_TT  = 0
+!  CIF%atom%n_TOT = 0
 !
   do_j_search_TOT: do j=1,CIF%n_atoms
    if( CIF%atom(j)%element == 14 ) then                                            ! T-atom, j
@@ -1410,7 +1349,6 @@ module GetStructures
 !       --------------------
         CIF%atom(j)%n_TT = CIF%atom(j)%n_TT + 1
         CIF%atom(j)%TT ( CIF%atom(j)%n_TT ) = DistanceMatrix(j,k)
-
 !       -----------------------
 !       T - O - T angles: j,i,k
 !       -----------------------
@@ -1426,14 +1364,10 @@ module GetStructures
 !
         CIF%atom(j)%n_TOT = CIF%atom(j)%n_TOT + 1
         CIF%atom(j)%TOT ( CIF%atom(j)%n_TOT ) = angle
-
        end if
       end do do_k_search_TOT
      end if
     end do do_i_search_TOT
-!   Print Si properties:
-!   --------------------
-!    write(6,*) j, CIF%atom(j)%TO(1:4)
    end if
   end do do_j_search_TOT
 !
@@ -1488,7 +1422,7 @@ module GetStructures
     end do do_j_search_q
     write(q_unit,*) q_l
     CIF%atom(i)%Q = q_l
-    !Q = Q + q_l
+    !Q= Q + q_l
    end if
   end do do_i_search_q
 ! 
@@ -1586,7 +1520,6 @@ module GetStructures
          end do do_m_search_staggering
         end if
        end do do_i_search_staggering
-!
        write(staggering_unit,*)j,l,minval(staggering_angle),minval(staggering_angle_2)
 ! }}
       end if
@@ -1594,14 +1527,16 @@ module GetStructures
      end do do_l_search_staggering
     end if
     end do do_k_search_staggering
-    ! Write NMR estimation from literature:
-    call moment(CIF%atom(j)%TO(1: CIF%atom(j)%n_TO),CIF%atom(j)%n_TO   ,ave_TO,dev_TO,sdev_TO,var_TO,skw_TO,kur_TO)
-    call moment(CIF%atom(j)%TT(1: CIF%atom(j)%n_TT),CIF%atom(j)%n_TT   ,ave_TT,dev_TT,sdev_TT,var_TT,skw_TT,kur_TT)
-    call moment(CIF%atom(j)%TOT(1: CIF%atom(j)%n_TOT),CIF%atom(j)%n_TOT,ave_TOT,dev_TOT,sdev_TOT,var_TOT,skw_TOT,kur_TOT)
-    call moment(CIF%atom(j)%OTO(1: CIF%atom(j)%n_OTO),CIF%atom(j)%n_OTO,ave_OTO,dev_OTO,sdev_OTO,var_OTO,skw_OTO,kur_OTO)
-    call moment(CIF%atom(j)%OO(1: CIF%atom(j)%n_OO),CIF%atom(j)%n_OO   ,ave_OO,dev_OO,sdev_OO,var_OO,skw_OO,kur_OO)
+    ! geometrics per Si-atom.
+    call moment(CIF%atom(j)%TO(1:4),4,ave_TO,dev_TO,sdev_TO,var_TO,skw_TO,kur_TO)
+    call moment(CIF%atom(j)%TT(1:4),4,ave_TT,dev_TT,sdev_TT,var_TT,skw_TT,kur_TT)
+    call moment(CIF%atom(j)%TOT(1:4),4,ave_TOT,dev_TOT,sdev_TOT,var_TOT,skw_TOT,kur_TOT)
+    call moment(CIF%atom(j)%OTO(1:4),4,ave_OTO,dev_OTO,sdev_OTO,var_OTO,skw_OTO,kur_OTO)
+    data(1:6) = CIF%atom(j)%OO(1:6)
+    call moment(data(1:6),6,ave_OO,dev_OO,sdev_OO,var_OO,skw_OO,kur_OO)
+    write(6,*) CIF%atom(j)%OO(1:6), data(1:6)
 ! -------------------
-    !write(6,*)'[dev]', CIF%atom(j)%OO
+  ! Write NMR estimation from literature:
 ! Formulas are take from:                                                 Brouwer et al., Microporous and Mesoporous Materials, 297, 1 2020, 110000, 10.1016/j.micromeso.2020.110000
     write(NMR_SiSi_unit,*) j,  &
       131.79-0.647105*ave_TOT-47.0504*ave_TT, &                                                 ! Ours
@@ -1991,11 +1926,11 @@ program ZeoAnalyser
     compare_flag = .true.
    case ('-nl','--no-create-list')
     generate_list_file = .false.
-    shellonly_flag = .true.
+    !shellonly_flag = .true.
    case ('-r','--restart')
     preoptimization_flag = .true.
    case ('-s','--shellonly')
-    generate_list_file = .true.
+    !generate_list_file = .true.
     shellonly_flag = .true.
    case default
     generate_list_file = .true.
