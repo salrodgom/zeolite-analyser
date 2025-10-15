@@ -289,7 +289,12 @@ module histograms
   end do
   ! Frecuencias por intervalo
   do i=1,n_boxs
-    histo(i) = count(data >= bound(i-1) .and. data < bound(i))
+    !histo(i) = count(data >= bound(i-1) .and. data < bound(i))
+    if (i == n_boxs) then
+      histo(i) = count(data >= bound(i-1) .and. data <= bound(i))
+    else
+      histo(i) = count(data >= bound(i-1) .and. data < bound(i))
+    end if
   end do
   ! Normalizar histograma
   suma = sum(histo)
